@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<NAF version="1.0" xml:lang="en">
+  <nafHeader>
+    <fileDesc author="ShakataGaNai" creationtime="2005-05-07T00:00:00" filename="9549_Reactions_to_Apple" filetype="HTML" title="Reactions to Apple's OS X Tiger" />
+    <public publicId="9549" uri="http://en.wikinews.org/wiki/Reactions_to_Apple's_OS_X_Tiger" />
+  </nafHeader>
+  <raw>Reactions to Apple's OS X Tiger
+
+May 7, 2005
+
+In chatrooms and on bulletin boards, Macintosh users and the Macintosh-curious are buzzing about Tiger, the newest version of Apple Computer's Mac OS X, version 10.4. The open-source kernel, or base of the system, "Darwin", plus all the features of Apple's proprietary Quartz user interface features, software, and system utilities have passed through their next phase of upgrading and scrutiny, and have been shipping for more than a week now.
+
+Apple reports that Tiger, the code name for this release, includes over 200 new features and new versions of application software such as e-mail client Mail, web browser Safari, and multi-person audio/video/text messaging client iChat. Entirely new features have also been rolled out in this release:
+* Spotlight integrates search in the core of the OS, and utilizes meta-data in its algorithm.
+* Dashboard provides a sandbox for widgets, handy mini-applicatios like a calculator, sticky notes, and a dictionary, made available at the stroke of a key.
+* Automator, a graphical scripting interface that enables non-programmers to automate repetitive tasks.
+
+One user of the new operating system made this comment:
+ 
+
+Industry analysts have pointed to both the advances and the failures of the new version already. Many of the bigger technology advances have gained high praise, but, they point out, Microsoft Longhorn is also expected to have many of these advantages when it is released, expected in late 2006. And inter-operability, long a strength of Macintosh to work with other operating systems and networks, has had a few bugs—such as reports of issues with Server Message Block (SMB) and Active Directory. Another issue for some is the fact that Cisco System's VPN does not work with Tiger. Cisco has promised a compatible release before the end of the month.
+
+The biggest technology breakthrough is Spotlight. Using meta-data, searches are fast and easy and very thorough, and the results of the search can be used over and over again and will automatically update and change as you use your system. Search queries on a user's data can be saved as "Smart folders" without ever moving files on the hard drive, so you can collect all your photos, receipts, and webpages about your summer vacation, for example, while still keeping things ordered on your hard drive. According to a review by PC World, this alone is worth the US$129.
+
+Still, even Macintosh support sites such as Mac News suggest waiting for the first "point" release (10.4.1) before jumping in, which is expected in late May. Apple Computer has been on a semi-regular release pattern since moving to Mac OS X, with four versions released in 5 years. This constant development program has occasionally been accused of being aimed at forcing users to constantly pay out for expensive new software, but the returns of regular releases have been quick bug fixes and leading edge technology.
+
+</raw>
+
+</NAF>
