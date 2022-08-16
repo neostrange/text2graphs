@@ -8,6 +8,7 @@ from spacy.tokens import Doc, Token, Span
 from util.RestCaller import callAllenNlpApi
 import TextProcessor
 from util.GraphDbBase import GraphDBBase
+from TextProcessor import TextProcessor
 
 
 
@@ -108,7 +109,8 @@ if __name__ == '__main__':
 
     #directory = r'C:\Users\neo strange\.Neo4jDesktop\relate-data\dbmss\dbms-526a9b9e-9d99-4d7f-8a1b-47e71323376f\import'
     
-    directory = r'/../home/neo/environments/text2graphs/dataset/'
+    directory = r'/../home/neo/environments/text2graphs/text2graphs/dataset'
+    
     
     text_tuples = basic_nlp.store_corpus(directory)
 
