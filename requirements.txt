@@ -19,7 +19,6 @@ colorama==0.4.5
 commonmark==0.9.1
 conllu==4.4.1
 coreferee==1.2.0
-coreferee-model-en
 cupy-cuda113==10.6.0
 cycler==0.11.0
 cymem==2.0.6
