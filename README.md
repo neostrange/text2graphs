@@ -7,4 +7,5 @@
 - install py2neo
 - install GPUtil
 - install neo4j desktop and copy the files from the dataset folder in repository to the import folder. Restart the neo4j.
-export PYTHONPATH="$(pwd):$PYTHONPATH"
+
+- this command is not required until you need to work in nested dir: export PYTHONPATH="$(pwd):$PYTHONPATH"
