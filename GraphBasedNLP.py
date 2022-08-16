@@ -3,11 +3,11 @@ import spacy
 import sys
 #import neuralcoref
 import coreferee
-from gpml.util.SemanticRoleLabel2 import SemanticRoleLabel
+from util.SemanticRoleLabeler import SemanticRoleLabel
 from spacy.tokens import Doc, Token, Span
-from gpml.util.RestCaller import callAllenNlpApi
-from gpml.ch12.text_processors import TextProcessor
-from gpml.util.graphdb_base import GraphDBBase
+from util.RestCaller import callAllenNlpApi
+import TextProcessor
+from util.GraphDbBase import GraphDBBase
 
 
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     #directory = r'C:\Users\neo strange\.Neo4jDesktop\relate-data\dbmss\dbms-526a9b9e-9d99-4d7f-8a1b-47e71323376f\import'
     
-    directory = r'/../home/neo/environments/gpml_spacy3/gpml/dataset/'
+    directory = r'/../home/neo/environments/text2graphs/dataset/'
     
     text_tuples = basic_nlp.store_corpus(directory)
 

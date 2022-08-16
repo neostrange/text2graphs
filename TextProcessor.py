@@ -13,7 +13,7 @@ from spacy.matcher import Matcher, DependencyMatcher
 from spacy.tokens import Doc, Token, Span
 from spacy.language import Language
 import textwrap
-from gpml.util.RestCaller import callAllenNlpApi
+from util.RestCaller import callAllenNlpApi
 from transformers import logging
 logging.set_verbosity_error()
 
