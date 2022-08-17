@@ -7,11 +7,11 @@
 - install coreferee
   - python3 -m pip install coreferee
   - python3 -m coreferee install en
-- install neo4j
-- install py2neo
-- install GPUtil
+- pip install neo4j
+- pip install py2neo
+- pip install GPUtil
 - install neo4j desktop and 
-  - copy the files from the dataset folder in repository to the import folder. 
-  - install apoc plugin and enable import file configuration in apoc.conf file. 
+  - copy the files from the dataset folder in repository to the import folder of Neo4j. 
+  - install apoc pluginin neo4j and enable import file configuration in apoc.conf file. 
   - Restart the neo4j.
 - this command is not required until you need to work in nested dir: export PYTHONPATH="$(pwd):$PYTHONPATH"
