@@ -10,6 +10,8 @@
 - install neo4j
 - install py2neo
 - install GPUtil
-- install neo4j desktop and copy the files from the dataset folder in repository to the import folder. Restart the neo4j.
-
+- install neo4j desktop and 
+  - copy the files from the dataset folder in repository to the import folder. 
+  - install apoc plugin and enable import file configuration in apoc.conf file. 
+  - Restart the neo4j.
 - this command is not required until you need to work in nested dir: export PYTHONPATH="$(pwd):$PYTHONPATH"
