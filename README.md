@@ -15,3 +15,8 @@
   - install apoc pluginin neo4j and enable import file configuration in apoc.conf file (note: you would need to create apoc.conf file in project conf folder. Type the folder command in apoc.conf file apoc.import.file.enabled=true). 
   - Restart the neo4j instance.
 - this command is not required until you need to work in nested dir: export PYTHONPATH="$(pwd):$PYTHONPATH"
+
+
+
+-Run power shell to make wsl entry in windows fire wall using following command and restart the system
+  - New-NetFirewallRule -DisplayName "WSL" -Direction Inbound  -InterfaceAlias "vEthernet (WSL)"  -Action Allow
