@@ -2,7 +2,11 @@
 
 - install spacy 3.3.1
 - install spacy models both trf and lg
+  - python -m spacy download en_core_web_trf
+  - python -m spacy download en_core_web_lg
 - install coreferee
+  - python3 -m pip install coreferee
+  - python3 -m coreferee install en
 - install neo4j
 - install py2neo
 - install GPUtil
