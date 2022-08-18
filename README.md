@@ -20,3 +20,5 @@
 
 -Run power shell to make wsl entry in windows fire wall using following command and restart the system
   - New-NetFirewallRule -DisplayName "WSL" -Direction Inbound  -InterfaceAlias "vEthernet (WSL)"  -Action Allow
+  
+ - Neo4J setting, enable set dbms.default_listen_address=0.0.0.0
