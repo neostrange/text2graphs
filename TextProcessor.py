@@ -27,7 +27,7 @@ class TextProcessor(object):
 
 
     def get_annotated_text(self):
-        graph = Graph("bolt://10.200.36.232:7687", auth=("neo4j", "neo123"))
+        graph = Graph("bolt://10.200.37.170:7687", auth=("neo4j", "neo123"))
 
         query = "MATCH (n:AnnotatedText) RETURN n.text, n.id"
         data= graph.run(query).data()
@@ -52,7 +52,7 @@ class TextProcessor(object):
     
     def apply_pipeline_1(self, doc, flag_display = False):
 
-        graph = Graph("bolt://10.200.36.232:7687", auth=("neo4j", "neo123"))
+        graph = Graph("bolt://10.200.37.170:7687", auth=("neo4j", "neo123"))
         #doc = nlp(ss)
 
         list_pipeline = []
@@ -93,7 +93,7 @@ class TextProcessor(object):
                     v = Node("Frame", text=span.text, startIndex=y[0], endIndex=y[len(y)-1])
 
                     for index in y:
-                        query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "}) return x"
+                        query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
                         token_node= graph.evaluate(query) 
                         token_verb_rel = PARTICIPATES_IN(token_node,v)
 
@@ -110,7 +110,7 @@ class TextProcessor(object):
                         continue
                     
                     for index in y:
-                        query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "}) return x"
+                        query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
                         token_node= graph.evaluate(query) 
 
                         if token_node is None:

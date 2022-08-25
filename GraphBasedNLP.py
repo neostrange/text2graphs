@@ -111,7 +111,7 @@ if __name__ == '__main__':
     
     directory = r'/../home/neo/environments/text2graphs/text2graphs/dataset'
     
-    
+    # stores the file as a node in neo4j
     text_tuples = basic_nlp.store_corpus(directory)
 
     basic_nlp.tokenize_and_store(text_tuples=text_tuples, text_id= 1, storeTag= False)
