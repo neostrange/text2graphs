@@ -1,4 +1,5 @@
 from cgitb import text
+from distutils.command.config import config
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
 import json
@@ -16,18 +17,43 @@ import textwrap
 from util.RestCaller import callAllenNlpApi
 from transformers import logging
 logging.set_verbosity_error()
-
 from py2neo import Graph
 from py2neo import *
+import configparser
+import os
+
+
 
 
 
 
 class TextProcessor(object):
 
+    uri=""
+    username =""
+    password =""
+    
+    
+    def __init__(self, nlp, driver):
+        self.nlp = nlp
+        self._driver = driver
+        self.uri=""
+        self.username =""
+        self.password =""
+        config = configparser.ConfigParser()
+        #config_file = os.path.join(os.path.dirname(__file__), '..', 'config.ini')
+        config_file = os.path.join(os.path.dirname(__file__), 'config.ini')
+        config.read(config_file)
+        py2neo_params = config['py2neo']
+        self.uri = py2neo_params.get('uri')
+        self.username = py2neo_params.get('username')
+        self.password = py2neo_params.get('password')
+        
 
     def get_annotated_text(self):
-        graph = Graph("bolt://10.200.37.170:7687", auth=("neo4j", "neo123"))
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
 
         query = "MATCH (n:AnnotatedText) RETURN n.text, n.id"
         data= graph.run(query).data()
@@ -42,17 +68,10 @@ class TextProcessor(object):
         
         return annotatedd_text_docs
 
-            
-
-        
-
-        
-
-
-    
     def apply_pipeline_1(self, doc, flag_display = False):
 
-        graph = Graph("bolt://10.200.37.170:7687", auth=("neo4j", "neo123"))
+        #graph = Graph("bolt://10.200.37.170:7687", auth=("neo4j", "neo123"))
+        graph = Graph(self.uri, auth=(self.username, self.password))
         #doc = nlp(ss)
 
         list_pipeline = []
@@ -147,9 +166,7 @@ class TextProcessor(object):
 
     
 
-    def __init__(self, nlp, driver):
-        self.nlp = nlp
-        self._driver = driver
+    
 
  # query = """MERGE (ann:AnnotatedText {id: $id})
        #     RETURN id(ann) as result
