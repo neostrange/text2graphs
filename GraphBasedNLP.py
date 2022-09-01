@@ -4,12 +4,22 @@ import sys
 #import neuralcoref
 import coreferee
 from util.SemanticRoleLabeler import SemanticRoleLabel
+from util.EntityFishingLinker import EntityFishing
 from spacy.tokens import Doc, Token, Span
 from util.RestCaller import callAllenNlpApi
 import TextProcessor
 from util.GraphDbBase import GraphDBBase
 from TextProcessor import TextProcessor
+import crosslingual_coreference
 
+""" from crosslingual_coreference import Predictor
+predictor = Predictor(
+    language="en_core_web_trf",
+    device=0,
+    model_name="spanbert",
+    chunk_size=2500,
+    chunk_overlap=2,
+) """
 
 
 
@@ -22,7 +32,10 @@ class GraphBasedNLP(GraphDBBase):
         self.nlp = spacy.load('en_core_web_trf')
         #coref = neuralcoref.NeuralCoref(self.nlp.vocab)
         #self.nlp.add_pipe(coref, name='neuralcoref')
-        self.nlp.add_pipe('coreferee')
+        #self.nlp.add_pipe('opentapioca')
+        self.nlp.add_pipe("entityfishing", config= {"api_ef_base": "http://localhost:8090/service", "extra_info": True})
+        #self.nlp.add_pipe('coreferee')
+        self.nlp.add_pipe("xx_coref", config={"chunk_size": 2500, "chunk_overlap": 2, "device": 0})
 
         if "srl" in self.nlp.pipe_names:
             self.nlp.remove_pipe("srl")
@@ -89,7 +102,7 @@ class GraphBasedNLP(GraphDBBase):
             spans = self.__text_processor.process_sentences(doc._.text_id, doc, storeTag, text_id)
             noun_chunks = self.__text_processor.process_noun_chunks(doc, text_id),
             nes = self.__text_processor.process_entities(spans, text_id)
-            coref = self.__text_processor.process_coreference(doc, text_id)
+            coref = self.__text_processor.process_coreference2(doc, text_id)
             self.__text_processor.build_entities_inferred_graph(text_id)
             self.__text_processor.apply_pipeline_1(doc)
             rules = [

@@ -280,7 +280,8 @@ class TextProcessor(object):
         nes = []
         for entity in spans:
             ne = {'value': entity.text, 'type': entity.label_, 'start_index': entity.start_char,
-                  'end_index': entity.end_char}
+                  'end_index': entity.end_char, 
+                  'kb_id': entity._.kb_qid, 'url_wikidata': entity._.url_wikidata, 'score': entity._.nerd_score }
             nes.append(ne)
         self.store_entities(text_id, nes)
         return nes
@@ -310,7 +311,8 @@ class TextProcessor(object):
         ne_query = """
             UNWIND $nes as item
             MERGE (ne:NamedEntity {id: toString($documentId) + "_" + toString(item.start_index)})
-            SET ne.type = item.type, ne.value = item.value, ne.index = item.start_index
+            SET ne.type = item.type, ne.value = item.value, ne.index = item.start_index,
+            ne.kb_id = item.kb_id, ne.url_wikidata = item.url_wikidata, ne.score = item.score
             WITH ne, item as neIndex
             MATCH (text:AnnotatedText)-[:CONTAINS_SENTENCE]->(sentence:Sentence)-[:HAS_TOKEN]->(tagOccurrence:TagOccurrence)
             WHERE text.id = $documentId AND tagOccurrence.index >= neIndex.start_index AND tagOccurrence.index < neIndex.end_index
@@ -318,7 +320,7 @@ class TextProcessor(object):
         """
         self.execute_query(ne_query, {"documentId": document_id, "nes": nes})
 
-
+#ne.kb_id = item.kb_id, ne.description = item.description, ne.score = item.score
     def process_coreference2(self, doc, text_id):
         coref = []
         if doc._.has_coref:
