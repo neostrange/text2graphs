@@ -10,6 +10,7 @@
 - pip install neo4j
 - pip install py2neo
 - pip install GPUtil
+- You may also need to replace the spacy-transformers with version 1.1.6
 - install neo4j desktop and 
   - copy the files from the dataset folder in repository to the import folder of Neo4j. 
   - install apoc pluginin neo4j and enable import file configuration in apoc.conf file (note: you would need to create apoc.conf file in project conf folder. Type the folder command in apoc.conf file apoc.import.file.enabled=true). 
