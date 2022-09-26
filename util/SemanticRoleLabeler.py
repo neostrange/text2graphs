@@ -136,20 +136,23 @@ class SemanticRoleLabel:
         # for each token in doc
         for sent in doc.sents:
             senti+=1
+            temp = sent.text
             res_srl = res_srl_list[senti]
             for tok in sent:
                 if tok.pos_ in ["VERB", "AUX"]:
                     ii = tok.i  # index of token within the parent document
                     try:
                         #search for the frame that is centered on this verb
-                        if senti > 0:
-                            next_sent_start_i = sent.start
+                        # if its the first sentence, so no need to get the difference.
+                        if senti == 0:
+                            sent_delta = 0
                         else:
-                            next_sent_start_i = 0
+                        # if its some sentence other than first one, get the difference
+                            sent_delta = sent.end
 
 
                         for el in res_srl["verbs"]:
-                            if el["tags"][ii - next_sent_start_i] == "B-V":
+                            if el["tags"][ii-sent_delta] == "B-V":
                                 frame_verb = el
 
                         #frame_verb = [el for el in res_srl.get["verbs"] if el["tags"][ii] == "B-V"][0]
