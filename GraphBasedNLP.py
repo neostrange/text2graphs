@@ -10,6 +10,7 @@ from util.RestCaller import callAllenNlpApi
 import TextProcessor
 from util.GraphDbBase import GraphDBBase
 from TextProcessor import TextProcessor
+import xml.etree.ElementTree as ET
 
 
 
@@ -25,7 +26,7 @@ class GraphBasedNLP(GraphDBBase):
         #self.nlp.add_pipe(coref, name='neuralcoref')
         #self.nlp.add_pipe('opentapioca')
         self.nlp.add_pipe("entityfishing", config= {"api_ef_base": "http://localhost:8090/service", "extra_info": True})
-        self.nlp.add_pipe('coreferee')
+        #self.nlp.add_pipe('coreferee')
         #self.nlp.add_pipe("xx_coref", config={"chunk_size": 2500, "chunk_overlap": 2, "device": 0})
 
         if "srl" in self.nlp.pipe_names:
@@ -50,6 +51,9 @@ class GraphBasedNLP(GraphDBBase):
         self.execute_without_exception("CREATE CONSTRAINT ON (l:Evidence) ASSERT (l.id) IS NODE KEY")
         self.execute_without_exception("CREATE CONSTRAINT ON (l:Relationship) ASSERT (l.id) IS NODE KEY")
         self.execute_without_exception("CREATE CONSTRAINT ON (l:NounChunk) ASSERT (l.id) IS NODE KEY")
+        #self.execute_without_exception("CREATE CONSTRAINT ON (l:CorefMention) ASSERT (l.id) IS NODE KEY")
+
+        
 
     # filenames are retrieved from the wsl2 ubuntu instance but neo4j accesses these files from its import directory
     # keeping copies of files at both sides is temporaray solution, later we can keep files and neo4j instance at same location
@@ -60,8 +64,14 @@ class GraphBasedNLP(GraphDBBase):
             # checking if it is a file
             if os.path.isfile(f):
                 print(filename)
+
+                tree = ET.parse('/home/neo/environments/text2graphs/text2graphs/dataset/'+filename)
+                root = tree.getroot()
+                text = root[1].text
+                #text = text.replace('\n\n','. ')
+                text = text.replace('\n','')
                 #storing the corpus files as nodes in neo4j with meta-data
-                self.__text_processor.create_annotated_text(filename, text_id)
+                self.__text_processor.create_annotated_text(filename, text, text_id)
                 text_id+=1
         
         text_tuples = tuple(self.__text_processor.get_annotated_text())
@@ -93,7 +103,9 @@ class GraphBasedNLP(GraphDBBase):
             spans = self.__text_processor.process_sentences(doc._.text_id, doc, storeTag, text_id)
             noun_chunks = self.__text_processor.process_noun_chunks(doc, text_id),
             nes = self.__text_processor.process_entities(spans, text_id)
-            coref = self.__text_processor.process_coreference(doc, text_id)
+            #coref = self.__text_processor.process_coreference(doc, text_id)
+            #coref = self.__text_processor.process_coreference_allennlp(doc, text_id)
+            coref = self.__text_processor.do_coref2(doc, text_id)
             self.__text_processor.build_entities_inferred_graph(text_id)
             self.__text_processor.apply_pipeline_1(doc)
             rules = [
@@ -114,6 +126,7 @@ if __name__ == '__main__':
     #directory = r'C:\Users\neo strange\.Neo4jDesktop\relate-data\dbmss\dbms-526a9b9e-9d99-4d7f-8a1b-47e71323376f\import'
     
     directory = r'/../home/neo/environments/text2graphs/text2graphs/dataset'
+   
     
     # stores the file as a node in neo4j
     text_tuples = basic_nlp.store_corpus(directory)

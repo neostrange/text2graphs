@@ -21,7 +21,8 @@ from py2neo import Graph
 from py2neo import *
 import configparser
 import os
-
+from util.RestCaller import callAllenNlpApi
+from util.CallAllenNlpCoref import callAllenNlpCoref
 
 
 
@@ -32,6 +33,8 @@ class TextProcessor(object):
     uri=""
     username =""
     password =""
+    graph=""
+    
     
     
     def __init__(self, nlp, driver):
@@ -48,14 +51,254 @@ class TextProcessor(object):
         self.uri = py2neo_params.get('uri')
         self.username = py2neo_params.get('username')
         self.password = py2neo_params.get('password')
+        #self.graph = Graph(self.uri, auth=(self.username, self.password))
+
+
+    def do_coref2(self, doc, textId):
+        graph = Graph(self.uri, auth=(self.username, self.password))
+        result = callAllenNlpCoref("coreference-resolution", doc.text )
+
+        sg=""
+        PARTICIPANT = Relationship.type("PARTICIPANT")
+        PARTICIPATES_IN = Relationship.type("PARTICIPATES_IN")
+        MENTIONS = Relationship.type("MENTIONS")
+        COREF = Relationship.type("COREF")
+
+        #print("clusters: " , result["clusters"])
+        # storing the coreference mentions as graph nodes linked with antecedent via mentions edges
+                # steps
+                # 1. get the coref-mention and antedent pair
+        coref = []
+        for cluster in result["clusters"]:
+            i=0
+            antecedent_span = ""
+            cag="" # coreferents - antecedent relationships sub-graph
+            
+            for span_token_indexes in cluster:
+                if i == 0:
+                    i+=1
+                    # the first span will be the antecedent for all other references
+                    antecedent_span = doc[span_token_indexes[0]:span_token_indexes[-1]+1]
+                    antecedent_node = {'start_index': span_token_indexes[0], 'end_index': span_token_indexes[-1]+1, 'text': antecedent_span.text}
+                    antecendent_node = Node("Antecedent", text= antecedent_span.text, startIndex=span_token_indexes[0], endIndex=span_token_indexes[-1]+1)
+                    antecedent_node_start_index = span_token_indexes[0]
+                    # connect the antecedentNode node with all the participating tagOccurrences
+                    index_range = range(span_token_indexes[0], span_token_indexes[-1]+1)
+                    atg=""
+                    for index in index_range:
+                        query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
+                        token_node = graph.evaluate(query)
+                        if token_node is None:
+                            #sga= antecendent_node
+                            #graph.create(sga)
+                            continue
+                        token_mention_rel = PARTICIPATES_IN(token_node,antecendent_node)
+                        if atg == "":
+                            atg = token_mention_rel
+                        else:
+                            atg = atg | token_mention_rel
+                    graph.create(atg)
+                    # antecedent-tagOccurrences sub-graph creation end. 
+                    continue
+
+                coref_mention_span = doc[span_token_indexes[0]:span_token_indexes[-1]+1]
+                coref_mention_node = {'start_index': span_token_indexes[0], 'end_index': span_token_indexes[-1]+1, 'text': coref_mention_span.text}
+                corefMention_node = Node("CorefMention", text= coref_mention_span.text, startIndex=span_token_indexes[0], endIndex=span_token_indexes[-1]+1)
+                #mention = {'from_index': span[-1], 'to_index': antecedent}
+                #mention = { 'referent': coref_mention_span, 'antecedent': antecedent_span}
+                mention = { 'referent': coref_mention_node, 'antecedent': antecedent_node}
+                
+                # connect the corefMention node with all the participating tagOccurrences
+                index_range = range(span_token_indexes[0], span_token_indexes[-1]+1)
+                ctg=""
+                for index in index_range:
+                    query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
+                    token_node = graph.evaluate(query)
+                    if token_node is None:
+                        #sgc= corefMention_node
+                        #graph.create(sgc)
+                        continue
+                    token_mention_rel = PARTICIPATES_IN(token_node,corefMention_node)
+                    if ctg == "":
+                        ctg = token_mention_rel
+                    else:
+                        ctg = ctg | token_mention_rel
+                    graph.create(ctg)
+                # corefMention - TagOccurrence subgraph ends. 
+
+
+                coref_rel = COREF(corefMention_node,antecendent_node)
+                if cag == "":
+                    cag = coref_rel
+                else:
+                    cag = cag | coref_rel
+                
+                coref.append(mention)
+
+                # connect the corefMention node with the antecdent namedEntity. 
+                # np_query = "MATCH (document:AnnotatedText {id:"+ str(doc._.text_id) +"})-[*2]->(np:TagOccurrence)-[:PARTICIPATES_IN]->(end:NamedEntity) WHERE np.index = " + str(antecedent_node_start_index) + " RETURN end"
+                # np_node = graph.evaluate(np_query)
+                # if np_node is None:
+                #     """ try:
+                #         #graph.create(sg)
+                #     except BaseException as err:
+                #         print(f"Unexpected {err=}, {type(err)=}") """
+                    
+                #     continue
+                
+                # coref_mention_np_rel = MENTIONS(corefMention_node,np_node)
+                
+                # cag = cag |coref_mention_np_rel  
+
+            graph.create(cag)
+        
+           
+        #TODO: this query need to be tested and should be made more specific other wise it may result it false positives
+        graph.evaluate("""match (ne:NamedEntity)<-[:PARTICIPATES_IN]-(tago:TagOccurrence)-[:PARTICIPATES_IN]->(ant:Antecedent)<-[:COREF]-(corefm:CorefMention) 
+        where tago.index = ne.index and tago.tok_index_doc = ant.startIndex
+        merge (corefm)-[:MENTIONS]->(ne)""")    
+        
+        print(coref)
+        #self.store_coref_mentions(doc, coref)
+
         
 
+        # create the referrant span , attaches it with the tagOccurrences
+        # identify the namedEntity that belongs to the antecedent
+        # 
+
+        
+
+
+
+    def do_coref(self, doc, textId):
+        
+        result = callAllenNlpCoref("coreference-resolution", doc.text )
+
+        #print("clusters: " , result["clusters"])
+        # storing the coreference mentions as graph nodes linked with antecedent via mentions edges
+                # steps
+                # 1. get the coref-mention and antedent pair
+        coref = []
+        for cluster in result["clusters"]:
+            i=0
+            antecedent_span = ""
+            for span_token_indexes in cluster:
+                if i == 0:
+                    i+=1
+                    # the first span will be the antecedent for all other references
+                    antecedent_span = doc[span_token_indexes[0]:span_token_indexes[-1]+1]
+                    antecedent_node = {'start_index': span_token_indexes[0], 'end_index': span_token_indexes[-1]+1, 'text': antecedent_span.text}
+                    continue
+                coref_mention_span = doc[span_token_indexes[0]:span_token_indexes[-1]+1]
+                coref_mention_node = {'start_index': span_token_indexes[0], 'end_index': span_token_indexes[-1]+1, 'text': coref_mention_span.text}
+                #mention = {'from_index': span[-1], 'to_index': antecedent}
+                #mention = { 'referent': coref_mention_span, 'antecedent': antecedent_span}
+                mention = { 'referent': coref_mention_node, 'antecedent': antecedent_node}
+                coref.append(mention)
+            
+        print(coref)
+        self.store_coref_mentions(doc, coref)
+
+    def store_coref_mentions(self, doc, mentions):
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        # create the referrant span , attaches it with the tagOccurrences
+        # identify the namedEntity that belongs to the antecedent
+        # 
+
+        sg=""
+        PARTICIPANT = Relationship.type("PARTICIPANT")
+        PARTICIPATES_IN = Relationship.type("PARTICIPATES_IN")
+        MENTIONS = Relationship.type("MENTIONS")
+        COREF = Relationship.type("COREF")
+
+        for mention in mentions:
+            
+            
+            start_index = mention['referent']['start_index']
+            end_index = mention['referent']['end_index']
+            start_index_antecedent = mention['antecedent']['start_index']
+            end_index_antecedent = mention['antecedent']['end_index']
+
+            sg=""
+            sgc=""
+            sga=""
+            # create a corefMention node
+            corefMention_node = Node("CorefMention", text= mention['referent']['text'], startIndex=start_index, endIndex=end_index)
+            antecendent_node = Node("Antecedent", text= mention['antecedent']['text'], startIndex=start_index_antecedent, endIndex=end_index_antecedent)
+
+            coref_rel = COREF(corefMention_node,antecendent_node)
+            #tx = self.graph.begin()
+            graph.create(coref_rel)
+            
+            #self.graph.commit(tx)
+            # connect the corefMention node with all the participating tagOccurrences
+            index_range = range(start_index, end_index)
+            for index in index_range:
+                query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
+                token_node = graph.evaluate(query)
+                if token_node is None:
+                    sgc= corefMention_node
+                    #graph.create(sgc)
+                    continue
+                token_mention_rel = PARTICIPATES_IN(token_node,corefMention_node)
+                if sgc == "":
+                    sgc = token_mention_rel
+                else:
+                    sgc = sgc | token_mention_rel
+                graph.create(sgc)
+
+            # connect the antecedentNode node with all the participating tagOccurrences
+            index_range = range(start_index_antecedent, end_index_antecedent)
+            for index in index_range:
+                query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
+                token_node = graph.evaluate(query)
+                if token_node is None:
+                    sga= antecendent_node
+                    #graph.create(sga)
+                    continue
+                token_mention_rel = PARTICIPATES_IN(token_node,antecendent_node)
+                if sga == "":
+                    sga = token_mention_rel
+                else:
+                    sga = sga | token_mention_rel
+                graph.create(sga)
+            
+            
+            #graph.create(sg|sga|coref_rel)
+            
+            # connect the corefMention node with the antecdent namedEntity. 
+            np_query = "MATCH (document:AnnotatedText {id:"+ str(doc._.text_id) +"})-[*2]->(np:TagOccurrence)-[:PARTICIPATES_IN]->(end:NamedEntity) WHERE np.index = " + str(start_index_antecedent) + " RETURN end"
+            np_node = graph.evaluate(np_query)
+            if np_node is None:
+                """ try:
+                    #graph.create(sg)
+                except BaseException as err:
+                    print(f"Unexpected {err=}, {type(err)=}") """
+                
+                continue
+            
+            coref_mention_np_rel = MENTIONS(corefMention_node,np_node)
+            
+            sg = sg |coref_mention_np_rel 
+
+            try:
+                graph.create(sg)
+            except BaseException as err:
+               print(f"Unexpected {err=}, {type(err)=}") 
+
+        return mention    
+
+        
+# this method also includes code to create files for TARSQI toolkit.
+# TODO: we need to port this code to another seperate script file outside this project. 
     def get_annotated_text(self):
 
         print(self.uri)
         graph = Graph(self.uri, auth=(self.username, self.password))
 
-        query = "MATCH (n:AnnotatedText) RETURN n.text, n.id"
+        query = "MATCH (n:AnnotatedText) RETURN n.text, n.id, n.creationtime"
         data= graph.run(query).data()
 
         annotatedd_text_docs= list()
@@ -64,6 +307,15 @@ class TextProcessor(object):
             #print(record)
             #print(record.get("n.text"))
             t = (record.get("n.text"), {'text_id': record.get("n.id")})
+
+            dct = str(record.get("n.creationtime"))
+            dct = dct[0:10]
+            dct= dct.replace('-','')
+            # create a file
+            filename = """/home/neo/environments/text2graphs/text2graphs/tarsqi-dataset/""" + str(record.get("n.id")) +"_"+ dct + ".xml" 
+            f = open(filename, "x")
+            f.write(record.get("n.text"))
+            f.close()
             annotatedd_text_docs.append(t)
         
         return annotatedd_text_docs
@@ -113,9 +365,16 @@ class TextProcessor(object):
 
                     for index in y:
                         query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
-                        token_node= graph.evaluate(query) 
+                        token_node= graph.evaluate(query)
                         token_verb_rel = PARTICIPATES_IN(token_node,v)
+                        # try:
+                        #     token_verb_rel = PARTICIPATES_IN(token_node,v)
+                        # except BaseException as err:
+                        #     print("query: ", query)
+                        #     print(f"Unexpected {err=}, {type(err)=}")  
+                        
 
+                    # debug later 
                     #frameDict[x] = v;
                     # save the verb node seperately 
                     #sg=v
@@ -155,7 +414,10 @@ class TextProcessor(object):
                     sg = sg | r
 
 
-                graph.create(sg)
+                try:
+                    graph.create(sg)
+                except BaseException as err:
+                    print(f"Unexpected {err=}, {type(err)=}") 
 
             #print(x, ": ",y, span.text)
                         
@@ -173,7 +435,7 @@ class TextProcessor(object):
         #"""
 
         
-    def create_annotated_text(self, filename, id):
+    def create_annotated_text(self, filename, content, id):
         filename = "file://" + filename
         query = """ CALL apoc.load.xml($filename) 
         YIELD value
@@ -182,11 +444,16 @@ class TextProcessor(object):
         UNWIND [item in nafHeader._children where item._type = "fileDesc"] AS fileDesc
         UNWIND [item in nafHeader._children where item._type = "public"] AS public
         WITH  fileDesc.author as author, fileDesc.creationtime as creationtime, fileDesc.filename as filename, fileDesc.filetype as filetype, fileDesc.title as title, public.publicId as publicId, public.uri as uri, raw._text as text
-        MERGE (at:AnnotatedText {id: $id}) set at.author = author, at.creationtime = creationtime, at.filename = filename, at.filetype = filetype, at.title = title, at.publicId = publicId, at.uri = uri, at.text = replace(text,"  "," ")
+        MERGE (at:AnnotatedText {id: $id}) set at.author = author, at.creationtime = creationtime, at.filename = filename, at.filetype = filetype, at.title = title, at.publicId = publicId, at.uri = uri, at.text = $text
         """
-        params = {"id": id, "filename":filename}
+        params = {"id": id, "filename":filename, "text": content}
+        print(query)
         results = self.execute_query(query, params)
         #return results[0]
+#replace(text,"  "," ")
+    def add_temporal_metadata(self, filename, id):
+        
+        return ""
 
     def process_sentences(self, annotated_text, doc, storeTag, text_id):
         i = 1
@@ -255,17 +522,18 @@ class TextProcessor(object):
             if not lexeme.is_space:
                 tag_occurrence_id = str(text_id) + "_" + str(sentence_id) + "_" + str(token.idx)
                 tag_occurrence = {"id": tag_occurrence_id,
-                                  "index": token.idx,
-                                  "text": token.text,
-                                  "lemma": token.lemma_,
-                                  "pos": token.tag_,
-                                  "tok_index_doc": token.i,
-                                  "tok_index_sent": (token.i - sentence.start),
-                                  "is_stop": (lexeme.is_stop or lexeme.is_punct or lexeme.is_space)}
+                                    "index": token.idx,
+                                    "end_index": (len(token.text)+token.idx),
+                                    "text": token.text,
+                                    "lemma": token.lemma_,
+                                    "pos": token.tag_,
+                                    "tok_index_doc": token.i,
+                                    "tok_index_sent": (token.i - sentence.start),
+                                    "is_stop": (lexeme.is_stop or lexeme.is_punct or lexeme.is_space)}
                 tag_occurrences.append(tag_occurrence)
                 tag_occurrence_dependency_source = str(text_id) + "_" + str(sentence_id) + "_" + str(token.head.idx)
                 dependency = {"source": tag_occurrence_dependency_source, "destination": tag_occurrence_id,
-                              "type": token.dep_}
+                                "type": token.dep_}
                 tag_occurrence_dependencies.append(dependency)
         params = {"sentence_id": node_sentence_id, "tag_occurrences": tag_occurrences}
         if storeTag:
@@ -281,7 +549,8 @@ class TextProcessor(object):
         for entity in spans:
             ne = {'value': entity.text, 'type': entity.label_, 'start_index': entity.start_char,
                   'end_index': entity.end_char, 
-                  'kb_id': entity._.kb_qid, 'url_wikidata': entity._.url_wikidata, 'score': entity._.nerd_score }
+                  'kb_id': entity._.kb_qid, 'url_wikidata': entity._.url_wikidata, 'score': entity._.nerd_score,
+                  'normal_term': entity._.normal_term, 'description': entity._.description }
             nes.append(ne)
         self.store_entities(text_id, nes)
         return nes
@@ -312,7 +581,8 @@ class TextProcessor(object):
             UNWIND $nes as item
             MERGE (ne:NamedEntity {id: toString($documentId) + "_" + toString(item.start_index)})
             SET ne.type = item.type, ne.value = item.value, ne.index = item.start_index,
-            ne.kb_id = item.kb_id, ne.url_wikidata = item.url_wikidata, ne.score = item.score
+            ne.kb_id = item.kb_id, ne.url_wikidata = item.url_wikidata, ne.score = item.score, ne.normal_term = item.normal_term, 
+            ne.description = item.description
             WITH ne, item as neIndex
             MATCH (text:AnnotatedText)-[:CONTAINS_SENTENCE]->(sentence:Sentence)-[:HAS_TOKEN]->(tagOccurrence:TagOccurrence)
             WHERE text.id = $documentId AND tagOccurrence.index >= neIndex.start_index AND tagOccurrence.index < neIndex.end_index
@@ -328,6 +598,29 @@ class TextProcessor(object):
                 mention = {'from_index': cluster.mentions[-1].start_char, 'to_index': cluster.mentions[0].start_char}
                 coref.append(mention)
             self.store_coref(text_id, coref)
+        return coref
+
+    def process_coreference_allennlp(self, doc, text_id):
+
+        result = callAllenNlpCoref("coreference-resolution", doc.text )
+        coref = []
+        for cluster in result["clusters"]:
+            #print("cluster: ", cluster)
+            i = 0
+            antecedent = ""
+            for span in cluster:
+                if i == 0:
+                    i+=1
+                    # the first span will be the antecedent for all other references
+                    antecedent = span[0]
+                    continue
+                mention = {'from_index': span[-1], 'to_index': antecedent}
+                coref.append(mention)
+                print (mention)
+        self.store_coref_allennlp(text_id, coref)
+
+        
+
         return coref
 
     def process_coreference(self,doc,text_id):
@@ -362,10 +655,30 @@ class TextProcessor(object):
                 WHERE document.id = $documentId 
                 WITH document
                 UNWIND $corefs as coref  
-                MATCH (document)-[*2]->(start:TagOccurrence), (document)-[*2]->(np:TagOccurrence)-[:PARTICIPATES_IN]->(end:NounChunk) 
+                MATCH (document)-[*2]->(start:TagOccurrence), (document)-[*2]->(np:TagOccurrence)-[:PARTICIPATES_IN]->(end:NamedEntity) 
                 WHERE start.index = coref.from_index AND np.index = coref.to_index
                 MERGE (start)-[:MENTIONS]->(end)
         """
+        # the below commented statement is the previous version of the query which consider noun chunk for mentions relationship
+        # MATCH (document)-[*2]->(start:TagOccurrence), (document)-[*2]->(np:TagOccurrence)-[:PARTICIPATES_IN]->(end:NounChunk) 
+        
+        self.execute_query(coref_query,
+                           {"documentId": document_id, "corefs": corefs})
+
+
+    def store_coref_allennlp(self, document_id, corefs):
+        coref_query = """
+                MATCH (document:AnnotatedText)
+                WHERE document.id = $documentId 
+                WITH document
+                UNWIND $corefs as coref  
+                MATCH (document)-[*2]->(start:TagOccurrence), (document)-[*2]->(np:TagOccurrence)-[:PARTICIPATES_IN]->(end:NamedEntity) 
+                WHERE start.tok_index_doc = coref.from_index AND np.tok_index_doc = coref.to_index
+                MERGE (start)-[:MENTIONS]->(end)
+        """
+        # the below commented statement is the previous version of the query which consider noun chunk for mentions relationship
+        # MATCH (document)-[*2]->(start:TagOccurrence), (document)-[*2]->(np:TagOccurrence)-[:PARTICIPATES_IN]->(end:NounChunk) 
+        
         self.execute_query(coref_query,
                            {"documentId": document_id, "corefs": corefs})
 
@@ -426,9 +739,9 @@ class TextProcessor(object):
             WHERE document.id = $documentId
             WITH document
             MATCH (document)-[*3..3]->(ne:NamedEntity)
-            WHERE NOT ne.type IN ['NP', 'NUMBER', 'DATE']
+            WHERE NOT ne.type IN ['NP', 'NUMBER', 'DATE', 'CARDINAL'] AND ne.kb_id IS NOT NULL
             WITH ne
-            MERGE (entity:Entity {type: ne.type, id:ne.value})
+            MERGE (entity:Entity {type: ne.type, kb_id:ne.kb_id, id:ne.normal_term})
             MERGE (ne)-[:REFERS_TO {type: "evoke"}]->(entity)
         """
 
@@ -437,7 +750,7 @@ class TextProcessor(object):
             WHERE document.id = $documentId
             WITH document
             MATCH (document)-[*3..3]->(ne:NamedEntity)<-[:MENTIONS]-(mention)
-            WHERE NOT ne.type IN ['NP', 'NUMBER', 'DATE']
+            WHERE NOT ne.type IN ['NP', 'NUMBER', 'DATE', 'CARDINAL']
             WITH ne, mention
             MERGE (entity:Entity {type: ne.type, id:ne.value})
             MERGE (mention)-[:REFERS_TO {type: "access"}]->(entity)
