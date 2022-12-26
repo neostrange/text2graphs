@@ -198,6 +198,7 @@ class EntityFishing:
                 "shortText": terms,
                 "language": language,
                 "targetSegmentSize": 3000,
+                #"minSelectorScore": 0.97,
                 "entities": [
                     {
                         "rawName": ent.text,

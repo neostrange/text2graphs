@@ -154,9 +154,9 @@ class TextProcessor(object):
         
            
         #TODO: this query need to be tested and should be made more specific other wise it may result it false positives
-        graph.evaluate("""match (ne:NamedEntity)<-[:PARTICIPATES_IN]-(tago:TagOccurrence)-[:PARTICIPATES_IN]->(ant:Antecedent)<-[:COREF]-(corefm:CorefMention) 
-        where tago.index = ne.index and tago.tok_index_doc = ant.startIndex
-        merge (corefm)-[:MENTIONS]->(ne)""")    
+        # graph.evaluate("""match (ne:NamedEntity)<-[:PARTICIPATES_IN]-(tago:TagOccurrence)-[:PARTICIPATES_IN]->(ant:Antecedent)<-[:COREF]-(corefm:CorefMention) 
+        # where tago.index = ne.index and tago.tok_index_doc = ant.startIndex
+        # merge (corefm)-[:MENTIONS]->(ne)""")    
         
         print(coref)
         #self.store_coref_mentions(doc, coref)
@@ -739,21 +739,36 @@ class TextProcessor(object):
             WHERE document.id = $documentId
             WITH document
             MATCH (document)-[*3..3]->(ne:NamedEntity)
-            WHERE NOT ne.type IN ['NP', 'NUMBER', 'DATE', 'CARDINAL'] AND ne.kb_id IS NOT NULL
+            WHERE NOT ne.type IN ['NP', 'ORDINAL', 'NUMBER', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NOT NULL
             WITH ne
             MERGE (entity:Entity {type: ne.type, kb_id:ne.kb_id, id:ne.normal_term})
             MERGE (ne)-[:REFERS_TO {type: "evoke"}]->(entity)
         """
 
+        # extract_indirect_entities_query = """
+        #     MATCH (document:AnnotatedText)
+        #     WHERE document.id = $documentId
+        #     WITH document
+        #     MATCH (document)-[*3..3]->(ne:NamedEntity)<-[:MENTIONS]-(mention)
+        #     WHERE NOT ne.type IN ['NP', 'ORDINAL', 'NUMBER', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT']
+        #     WITH ne, mention
+        #     MERGE (entity:Entity {type: ne.type, id:ne.value})
+        #     MERGE (mention)-[:REFERS_TO {type: "access"}]->(entity)
+        # """
+
+
+        # Here we have type and id as the unique identfier for Entity instances. It means if a NamedEntity has same type and same value
+        # then it will consider unique. Some more investigations into this matter is required. 
+        # However Entity deduplication will be performed using coreferencing information. 
         extract_indirect_entities_query = """
-            MATCH (document:AnnotatedText)
+        MATCH (document:AnnotatedText)
             WHERE document.id = $documentId
             WITH document
-            MATCH (document)-[*3..3]->(ne:NamedEntity)<-[:MENTIONS]-(mention)
-            WHERE NOT ne.type IN ['NP', 'NUMBER', 'DATE', 'CARDINAL']
-            WITH ne, mention
-            MERGE (entity:Entity {type: ne.type, id:ne.value})
-            MERGE (mention)-[:REFERS_TO {type: "access"}]->(entity)
+            MATCH (document)-[*3..3]->(ne:NamedEntity)
+            WHERE NOT ne.type IN ['NP', 'ORDINAL', 'NUMBER', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NULL
+            WITH ne
+            MERGE (entity:Entity {type: ne.type, kb_id:ne.value, id:ne.value})
+            MERGE (ne)-[:REFERS_TO {type: "evoke"}]->(entity)
         """
         self.execute_query(extract_direct_entities_query, {"documentId": document_id})
         self.execute_query(extract_indirect_entities_query, {"documentId": document_id})

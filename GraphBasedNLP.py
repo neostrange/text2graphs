@@ -106,6 +106,8 @@ class GraphBasedNLP(GraphDBBase):
             #coref = self.__text_processor.process_coreference(doc, text_id)
             #coref = self.__text_processor.process_coreference_allennlp(doc, text_id)
             coref = self.__text_processor.do_coref2(doc, text_id)
+            # HERE I NEED THE HEAD IDENTIFICATION FOR NAMED ENTITIES, COREF, ANTECEDENT, FRAMEARGUMENT
+            # 1. FOR SINGLE TOKEN, 2. FOR MULTI-TOKEN, 
             self.__text_processor.build_entities_inferred_graph(text_id)
             self.__text_processor.apply_pipeline_1(doc)
             rules = [
