@@ -15,6 +15,9 @@ import xml.etree.ElementTree as ET
 
 
 
+
+
+
 class GraphBasedNLP(GraphDBBase):
 
     def __init__(self, argv):
@@ -25,7 +28,10 @@ class GraphBasedNLP(GraphDBBase):
         #coref = neuralcoref.NeuralCoref(self.nlp.vocab)
         #self.nlp.add_pipe(coref, name='neuralcoref')
         #self.nlp.add_pipe('opentapioca')
-        self.nlp.add_pipe("entityfishing", config= {"api_ef_base": "http://localhost:8090/service", "extra_info": True})
+        #self.nlp.add_pipe("entityfishing", config= {"api_ef_base": "http://localhost:8090/service", "extra_info": True})
+        # add the pipeline stage
+        self.nlp.add_pipe('dbpedia_spotlight', config={'confidence': 0.5, 'overwrite_ents': True})
+        
         #self.nlp.add_pipe('coreferee')
         #self.nlp.add_pipe("xx_coref", config={"chunk_size": 2500, "chunk_overlap": 2, "device": 0})
 
@@ -103,6 +109,7 @@ class GraphBasedNLP(GraphDBBase):
             spans = self.__text_processor.process_sentences(doc._.text_id, doc, storeTag, text_id)
             noun_chunks = self.__text_processor.process_noun_chunks(doc, text_id),
             nes = self.__text_processor.process_entities(spans, text_id)
+            deduplicate = self.__text_processor.deduplicate_named_entities(text_id)
             #coref = self.__text_processor.process_coreference(doc, text_id)
             #coref = self.__text_processor.process_coreference_allennlp(doc, text_id)
             coref = self.__text_processor.do_coref2(doc, text_id)

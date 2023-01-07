@@ -338,7 +338,7 @@ class RefinementPhase():
     
 
     # //WE JUST NEED TO CONNECT FA TO NAMED ENTITY. 
-    # //CASE: when FA's headword is a pronominal
+    # //CASE: when FA's headword is a pronominal i.e., having pos value as PRP or PRP$
     # // we designed this query because we need to deal with FAs who have pronominal token. 
     # //we need the path to the named entity via coref-antecedent links
     def link_frameArgument_to_namedEntity_for_pro(self):
@@ -349,7 +349,7 @@ class RefinementPhase():
         query = """    
                         match p= (f:FrameArgument)<-[:PARTICIPATES_IN]-(head:TagOccurrence )-[:PARTICIPATES_IN]->
                         (crf:CorefMention)--(ant:Antecedent)-[:REFERS_TO]->(ne:NamedEntity)
-                        where head.tok_index_doc = f.headTokenIndex and head.tok_index_doc = crf.headTokenIndex
+                        where head.pos in ['PRP','PRP$'] and head.tok_index_doc = f.headTokenIndex and head.tok_index_doc = crf.headTokenIndex
                         merge (f)-[:REFERS_TO]->(ne)
                         return p     
         
@@ -361,6 +361,11 @@ class RefinementPhase():
     # // this query try to find those FAs who do not have any entity instance created during NER or NEL.  
     # // MISSING: fields such as extent, type(set here temporarily). Further, entity disambiguation and deduplication may be required. 
     # // coreferencing information can be employed to deduplicate entities.
+    # // CASES NOT COVERED: 
+    # // 1: when FA has text span which has more than one entity. For example, 'millions of people', here we have million as numeric and millions of people as nominal.
+    # //    -- perhaps these overlapping spans denoting multiple entities can be handled using SPANCAT. R&D is required 
+    # //    -- presently, the pipeline tag 'millions' as CARDINAL and refers_to connection is establish between FA and CARDINAL entity. However this connection is not
+    # //    -- correct as the correct entity is 'millions of people' which is NOMINAL.  Though head of FA is 'millions' in this phrase. 
     def link_frameArgument_to_new_entity(self):
  
         print(self.uri)
@@ -397,9 +402,127 @@ class RefinementPhase():
         
         return ""
 
+        
+
 
     
+# //It will add another label to named entities that are qualified as numeric.
+    def tag_numeric_entities(self):
 
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                        match (ne:NamedEntity) where ne.type in ['CARDINAL', 'ORDINAL', 'MONEY', 'QUANTITY', 'PERCENT']
+                        set ne:NUMERIC   
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
+    #// CASE Incorrect Named Entity Disambiguation (Example 1: JIM CRAMER detected as PIETER CRAMER which is wrong)
+    #// 
+    #// NED processing has not accurately disambiguated an entity. We are using Coref information to detect and correct the incorrect result
+    #// ASSUMPTION: that the antecedent is correctly disambiguated and we should rely on it. d
+    #// Here we are giving preference to NamedEntity refered by Antecedent node. Replacing the incorrect with the correct one.  
+    #// PRECONDITION: KB_ID attributes of both NamedEntities are not null. This query should be run before the Frameargument linking with NamedEntity
+    #// cases - 1. kb_id of both namedEntities are not null (DONE in this query)
+    #//         2. ne1 doesnt have kb_id and ne2 has kb_id  (e.g., Fed as a spacy entity but actually refering to dbpedia Federal Researve)(DONE in next query v2)
+    #//               
+    def detect_correct_NEL_result_for_having_kb_id(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                        match p= (e1:Entity)<-[:REFERS_TO]-(ne1:NamedEntity)<-[:PARTICIPATES_IN]-(t1:TagOccurrence)-[:PARTICIPATES_IN]->(coref:CorefMention)-[:COREF]->(ant:Antecedent)-[:REFERS_TO]->(ne2:NamedEntity)-[:REFERS_TO]->(e2:Entity)
+                        where t1.text = ne1.head and t1.text = coref.head and ne1.kb_id is not null and ne2.kb_id is not null and ne1.kb_id <> ne2.kb_id
+                        set ne1.kb_id = ne2.kb_id, ne1.description = ne2.description, ne1.normal_term = ne2.normal_term, ne1.url_wikidata = ne2.url_wikidata,ne1.type = ne2.type
+                        detach delete e1
+                        merge (ne1)-[:REFERS_TO]->(e2)
+                        return p    
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
+
+
+    #// detecting and correcting named entities result. 
+    #// Using the coreferencing information, and assuming antecedent refering to correct entity.
+    #// CONDITION: if entity of token from any of the corefmention is not equal to entity refered by antecedent.
+    #// CONDITION: ne1 doesnt have kb_id and ne2 has kb_id  (e.g., Fed as a spacy entity but actually refering to dbpedia Federal Researve)              
+    def detect_correct_NEL_result_for_missing_kb_id(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                        match p= (e1:Entity)<-[:REFERS_TO]-(ne1:NamedEntity)<-[:PARTICIPATES_IN]-(t1:TagOccurrence)-[:PARTICIPATES_IN]->(coref:CorefMention)-[:COREF]->(ant:Antecedent)-[:REFERS_TO]->(ne2:NamedEntity)-[:REFERS_TO]->(e2:Entity)
+                        where t1.text = ne1.head and t1.text = coref.head and ne1.kb_id is null and ne2.kb_id is not null
+                        set ne1.kb_id = ne2.kb_id, ne1.spacyType = ne1.type, ne1.type = ne2.type, ne1.description = ne2.description, ne1.normal_term = ne2.normal_term, ne1.url_wikidata = ne2.url_wikidata
+                        detach delete e1
+                        merge (ne1)-[:REFERS_TO]->(e2)
+                        return p    
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+         
+
+
+
+    # // This method detects the presence of quantified entities and create a new instance of it. 
+    # // It will first see whether the head token in frameArgument denotes a NUMERIC value (as a namedEntity) or some quantified signal such as all, some, many etc
+    # // and it is satisfying the following noun phrase composition:
+    # // (head {any quantifier}) --- (preposition {text:'of'}) --- (noun) e.g., millions of people, some of the players etc.
+    # // it deletes the existing REFERS_TO relationship between frameArgument and (numeric)NamedEntity. creates a new Entity and link frameArgument with that entity. 
+    # // PRECONDITIONS: should be executed after NER, NEL, head-identification, linking FA to namedEntities, entities.    
+    # // TODO: currently it only assign a type as NOMINAL to newly created entity. But it needs to be improved to detect PARTITIVE constructions. 
+    # // also it should be able to differentiate between partitive and nominal instances. for more detail see page 20 of 
+    # // 'NEWSREADER GUIDELINES FOR ANNOTATION AT DOCUMENT LEVEL' NWR-2014-2-2
+    def detect_quantified_entities_from_frameArgument(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                            match p = (pobj:TagOccurrence where pobj.pos in ['NNS','NNP','NN', 'NNPS','PRP', 'PRP$'])<-[dep2:IS_DEPENDENT {type: 'pobj'}]
+                            -(prep:TagOccurrence where prep.text= 'of')<-[dep1:IS_DEPENDENT {type: 'prep'}]-(head:TagOccurrence {tok_index_doc : fa.headTokenIndex})-
+                            [:PARTICIPATES_IN]->(fa:FrameArgument), (pobj)--(fa)
+                            where exists ((head)-[:PARTICIPATES_IN]->(:NamedEntity {type: 'CARDINAL'})) OR head.lemma in ['all', 'some', 'many', 'group']
+                            merge (fa)-[:REFERS_TO]->(e:Entity {id: fa.text, type: 'NOMINAL'})
+                            with fa,p
+                            match (fa)-[r:REFERS_TO]->(ne:NamedEntity)
+                            delete r
+                            return p    
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
+    # Link FA to Entity by using their links with NamedEntities. path = FA --> NE --> E  implies FA --> E
+    def link_frameArgument_to_entity(self):
+ 
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                        match p = (fa:FrameArgument)-[:REFERS_TO]->(ne:NamedEntity)-[:REFERS_TO]-(e:Entity)
+                        merge (fa)-[:REFERS_TO]-(e)
+                        return p     
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
 
 
 
@@ -415,12 +538,34 @@ if __name__ == '__main__':
     tp.get_and_assign_head_info_to_frameArgument_singletoken()
     tp.get_and_assign_head_info_to_frameArgument_multitoken()
     tp.get_and_assign_head_info_to_frameArgument_with_preposition()
+    
+    tp.link_antecedent_to_namedEntity()
+    tp.detect_correct_NEL_result_for_having_kb_id()
+    tp.detect_correct_NEL_result_for_missing_kb_id()
+
     tp.link_frameArgument_to_namedEntity_for_nam_nom()
     tp.link_frameArgument_to_namedEntity_for_pobj()
     tp.link_frameArgument_to_namedEntity_for_pobj_entity()
     tp.link_frameArgument_to_namedEntity_for_pro()
     tp.link_frameArgument_to_new_entity()
-    tp.link_antecedent_to_namedEntity()
+    
+    tp.tag_numeric_entities()
+    tp.detect_quantified_entities_from_frameArgument()
+    tp.link_frameArgument_to_entity()
+
+
+
+##
+#
+
+
+#
+##
+
+
+
+
+
 
 
 

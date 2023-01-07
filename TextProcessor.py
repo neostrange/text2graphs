@@ -460,8 +460,9 @@ class TextProcessor(object):
         for sentence in doc.sents:
             sentence_id = self.store_sentence(sentence, annotated_text, text_id, i, storeTag)
             #spans = list(doc.ents) + list(doc.noun_chunks) - just removed so that only entities get stored.
-            spans = list(doc.ents)
-            spans = filter_spans(spans)
+            #spans = list(doc.ents) - just disabled it as testing dbpedia spotlight
+            spans = list(doc.ents) + list(doc.spans['ents_original'])
+            #spans = filter_spans(spans) - just disabled it as testing dbpedia spotlight
             i += 1
         return spans
 
@@ -532,6 +533,9 @@ class TextProcessor(object):
                                     "is_stop": (lexeme.is_stop or lexeme.is_punct or lexeme.is_space)}
                 tag_occurrences.append(tag_occurrence)
                 tag_occurrence_dependency_source = str(text_id) + "_" + str(sentence_id) + "_" + str(token.head.idx)
+
+                print(token.text, token.dep_, token.head.text, token.head.pos_,
+            [child for child in token.children])
                 dependency = {"source": tag_occurrence_dependency_source, "destination": tag_occurrence_id,
                                 "type": token.dep_}
                 tag_occurrence_dependencies.append(dependency)
@@ -544,16 +548,40 @@ class TextProcessor(object):
         self.process_dependencies(tag_occurrence_dependencies)
         return results[0]
 
+
+    # this snippet is for dbpedia-spotlight component
     def process_entities(self, spans, text_id):
         nes = []
         for entity in spans:
-            ne = {'value': entity.text, 'type': entity.label_, 'start_index': entity.start_char,
-                  'end_index': entity.end_char, 
-                  'kb_id': entity._.kb_qid, 'url_wikidata': entity._.url_wikidata, 'score': entity._.nerd_score,
-                  'normal_term': entity._.normal_term, 'description': entity._.description }
+            if entity.kb_id_ != '': 
+                ne = {'value': entity.text, 'type': entity.label_, 'start_index': entity.start_char,
+                    'end_index': entity.end_char, 
+                    'kb_id': entity.kb_id_, 'url_wikidata': entity.kb_id_, 'score': entity._.dbpedia_raw_result['@similarityScore'],
+                    'normal_term': entity.text, 'description': entity._.dbpedia_raw_result.get('@surfaceForm')
+                    }
+            else:
+                ne = {'value': entity.text, 'type': entity.label_, 'start_index': entity.start_char,
+                    'end_index': entity.end_char
+                    }
+
             nes.append(ne)
         self.store_entities(text_id, nes)
         return nes
+    #end of this snippet
+
+
+    # this snippet is only applicable for entity-fishing component
+    # def process_entities(self, spans, text_id):
+    #     nes = []
+    #     for entity in spans:
+    #         ne = {'value': entity.text, 'type': entity.label_, 'start_index': entity.start_char,
+    #               'end_index': entity.end_char, 
+    #               'kb_id': entity._.kb_qid, 'url_wikidata': entity._.url_wikidata, 'score': entity._.nerd_score,
+    #               'normal_term': entity._.normal_term, 'description': entity._.description }
+    #         nes.append(ne)
+    #     self.store_entities(text_id, nes)
+    #     return nes
+    # end of this snippet. 
 
     def process_noun_chunks(self, doc, text_id):
         ncs = []
@@ -579,7 +607,7 @@ class TextProcessor(object):
     def store_entities(self, document_id, nes):
         ne_query = """
             UNWIND $nes as item
-            MERGE (ne:NamedEntity {id: toString($documentId) + "_" + toString(item.start_index)})
+            MERGE (ne:NamedEntity {id: toString($documentId) + "_" + toString(item.start_index)+ "_" + toString(item.end_index)+ "_" + toString(item.type)})
             SET ne.type = item.type, ne.value = item.value, ne.index = item.start_index,
             ne.kb_id = item.kb_id, ne.url_wikidata = item.url_wikidata, ne.score = item.score, ne.normal_term = item.normal_term, 
             ne.description = item.description
@@ -591,6 +619,103 @@ class TextProcessor(object):
         self.execute_query(ne_query, {"documentId": document_id, "nes": nes})
 
 #ne.kb_id = item.kb_id, ne.description = item.description, ne.score = item.score
+
+
+        #NamedEntity Multitoken
+    def get_and_assign_head_info_to_entity_multitoken(self, document_id):
+
+        # print(self.uri)
+        # graph = Graph(self.uri, auth=(self.username, self.password))
+
+
+        # query to find the head of a NamedEntity. (case is for entitities composed of  multitokens )
+        # TODO: the head for the NAM should include the whole extent of the name. see newsreader annotation guidelines 
+        # for more information. 
+        query = """    
+                        MATCH p= (text:AnnotatedText where text.id =  $documentId)-[:CONTAINS_SENTENCE]->(sentence:Sentence)-[:HAS_TOKEN]->(a:TagOccurrence)-[:PARTICIPATES_IN]-(ne:NamedEntity),q= (a)-[:IS_DEPENDENT]->()--(ne)
+                        where not exists ((a)<-[:IS_DEPENDENT]-()--(ne))
+                        WITH ne, a, p
+                                                set ne.head = a.text, ne.headTokenIndex = a.tok_index_doc, 
+                                                (case when a.pos in ['NNS', 'NN'] then ne END).syntacticType ='NOMINAL' ,
+                                                (case when a.pos in ['NNP', 'NNPS'] then ne END).syntacticType ='NAM' 
+        
+        """
+        self.execute_query(query, {'documentId': document_id})
+        
+
+
+    #NamedEntity Singletoken
+    def get_and_assign_head_info_to_entity_singletoken(self, document_id):
+
+        # print(self.uri)
+        # graph = Graph(self.uri, auth=(self.username, self.password))
+
+
+        # query to find the head of a NamedEntity. (case is for entitities composed of  single token )
+        query = """    
+                        MATCH p= (text:AnnotatedText where text.id =  $documentId )-[:CONTAINS_SENTENCE]->(sentence:Sentence)-[:HAS_TOKEN]->(a:TagOccurrence)-[:PARTICIPATES_IN]-(ne:NamedEntity)
+                        where not exists ((a)<-[:IS_DEPENDENT]-()--(ne)) and not exists ((a)-[:IS_DEPENDENT]->()--(ne))
+                        WITH ne, a, p
+                                                set ne.head = a.text, ne.headTokenIndex = a.tok_index_doc, 
+                                                (case when a.pos in ['NNS', 'NN'] then ne END).syntacticType ='NOMINAL' ,
+                                                (case when a.pos in ['NNP', 'NNPS'] then ne END).syntacticType ='NAM'   
+        
+        """
+        self.execute_query(query, {'documentId': document_id})
+
+
+
+    def use_spacy_named_entities(self, document_id):
+        # this query keep spacy named entities which have type of 'CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', 'PERCENT' 
+        query1 = """
+                    match p = (ne:NamedEntity where ne.type in ['CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', 'PERCENT'])--
+                    (a:TagOccurrence )--(ne2:NamedEntity) 
+                    where a.tok_index_doc = ne.headTokenIndex and a.tok_index_doc = ne2.headTokenIndex and ne.id <> ne2.id
+                    detach delete ne2
+        """ 
+        self.execute_query(query1, {"documentId": document_id})
+
+
+    
+    def use_dbpedia_named_entities(self, document_id):
+            # this query keeps the dbpedia ner entity but copies the spacy ner type information. 
+        query2 = """
+                    match p = (ne:NamedEntity where ne.kb_id is not null)--(a:TagOccurrence )--(ne2:NamedEntity) 
+                    where a.tok_index_doc = ne.headTokenIndex and a.tok_index_doc = ne2.headTokenIndex and ne.id <> ne2.id
+                    set ne.spacyType = ne2.type
+                    detach delete ne2 
+        """
+        
+        
+        self.execute_query(query2, {"documentId": document_id})
+
+
+
+
+
+    # we have two ner components in our pipeline i.e., spacy NER and DBpedia-spotlight 
+    # we acheive high accuracy and recall by using both spacyNER and DBpedia-spotlight components. But we need to fuse their results.
+    # we get two lists of namedEntities, one from spacyNER and other from DBpedia-spotlight
+    # sometimes we get duplicate entities, spans of text that have been classified by both components. HEAD word determine duplicate entries
+    # we have to remove the duplicate entries. 
+    # We give priority to spacyNER for these types (preferred list): 'CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', 'PERCENT'
+    # for rest of the entities we give preference to DBpedia-spotlight result.
+    # BUT, there are few entries that have not been detected by DBpedia-spotlight but detected in spacyNER. And they are not 
+    # from preferred list. We will keep those entities as it is.   
+
+    def deduplicate_named_entities(self, document_id):
+
+        self.get_and_assign_head_info_to_entity_multitoken(document_id)
+        self.get_and_assign_head_info_to_entity_singletoken(document_id)
+        self.use_spacy_named_entities(document_id)
+        self.use_dbpedia_named_entities(document_id)
+        return ''
+
+        
+    
+
+
+
     def process_coreference2(self, doc, text_id):
         coref = []
         if doc._.has_coref:
@@ -739,9 +864,9 @@ class TextProcessor(object):
             WHERE document.id = $documentId
             WITH document
             MATCH (document)-[*3..3]->(ne:NamedEntity)
-            WHERE NOT ne.type IN ['NP', 'ORDINAL', 'NUMBER', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NOT NULL
+            WHERE NOT ne.type IN ['NP', 'ORDINAL', 'NUMBER', 'MONEY', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NOT NULL
             WITH ne
-            MERGE (entity:Entity {type: ne.type, kb_id:ne.kb_id, id:ne.normal_term})
+            MERGE (entity:Entity {type: ne.type, kb_id:ne.kb_id, id: split(ne.kb_id, '/')[-1]})
             MERGE (ne)-[:REFERS_TO {type: "evoke"}]->(entity)
         """
 
@@ -765,7 +890,7 @@ class TextProcessor(object):
             WHERE document.id = $documentId
             WITH document
             MATCH (document)-[*3..3]->(ne:NamedEntity)
-            WHERE NOT ne.type IN ['NP', 'ORDINAL', 'NUMBER', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NULL
+            WHERE NOT ne.type IN ['NP', 'ORDINAL', 'MONEY', 'NUMBER', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NULL
             WITH ne
             MERGE (entity:Entity {type: ne.type, kb_id:ne.value, id:ne.value})
             MERGE (ne)-[:REFERS_TO {type: "evoke"}]->(entity)
@@ -809,7 +934,27 @@ class TextProcessor(object):
         """
         self.execute_query(extract_relationships_query, {"documentId": document_id})
 
+
     def execute_query(self, query, params):
+        session = None
+        response = None
+        results = []
+
+        try:
+            session = self._driver.session()
+            response =  session.run(query, params)
+            for items in response:
+                item = items["result"]
+                results.append(item)
+        except Exception as e:
+            print("Query Failed: ", e)
+        finally:
+            if session is not None:
+                session.close()
+        return results
+
+
+    def execute_query2(self, query, params):
         results = []
         with self._driver.session() as session:
             for items in session.run(query, params):

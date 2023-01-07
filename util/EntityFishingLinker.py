@@ -204,7 +204,7 @@ class EntityFishing:
                         "rawName": ent.text,
                         "offsetStart": ent.start,
                         "offsetEnd": ent.end,
-                    } for ent in entities
+                    } for ent in entities if ent.label_ not in ['CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', 'PERCENT']
                 ],
                 "mentions": [],
                 "customisation": "generic",
@@ -384,7 +384,7 @@ class EntityFishing:
                     doc[ent[1]:ent[2]] for ent in [
                         (
                             ent.text, ent.start, ent.end
-                        ) for ent in doc.ents
+                        ) for ent in doc.ents if ent.label_ not in ['CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', 'PERCENT']
                     ] if ent not in [
                         (
                             ent_ef['rawName'], ent_ef['offsetStart'], ent_ef['offsetEnd']
@@ -396,7 +396,7 @@ class EntityFishing:
         entities_from_terms = []
         if len(nil_clustering) != 0:
             # prepare query for Entity-Fishing terms disambiguation
-            terms = " ".join([ent.text for ent in doc.ents])
+            terms = " ".join([ent.text for ent in doc.ents if ent.label_ not in ['CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', 'PERCENT']])
             result_from_ef_terms = self.main_disambiguation_process(text="",
                                                                     terms=terms,
                                                                     entities=nil_clustering)
