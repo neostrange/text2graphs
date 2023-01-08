@@ -372,7 +372,8 @@ class RefinementPhase():
         graph = Graph(self.uri, auth=(self.username, self.password))
 
         query = """    
-                        MATCH p= (f:FrameArgument where f.type in ['ARG0','ARG1','ARG2','ARG3','ARG4'])-[:PARTICIPATES_IN]-(h:TagOccurrence where not  h.pos  in ['IN'])
+                        MATCH p= (f:FrameArgument where f.type in ['ARG0','ARG1','ARG2','ARG3','ARG4'] and f.syntacticType <> 'PRO')
+                        -[:PARTICIPATES_IN]-(h:TagOccurrence where not  h.pos  in ['IN'])
                         where f.headTokenIndex = h.tok_index_doc 
                         and not exists ((h)-[]-(:NamedEntity {headTokenIndex: h.tok_index_doc}))
                         merge (h)-[:PARTICIPATES_IN]->(e:Entity {id:f.text, type:f.syntacticType, 
@@ -509,7 +510,7 @@ class RefinementPhase():
 
 
     # Link FA to Entity by using their links with NamedEntities. path = FA --> NE --> E  implies FA --> E
-    def link_frameArgument_to_entity(self):
+    def link_frameArgument_to_entity_via_named_entity(self):
  
         print(self.uri)
         graph = Graph(self.uri, auth=(self.username, self.password))
@@ -551,7 +552,7 @@ if __name__ == '__main__':
     
     tp.tag_numeric_entities()
     tp.detect_quantified_entities_from_frameArgument()
-    tp.link_frameArgument_to_entity()
+    tp.link_frameArgument_to_entity_via_named_entity()
 
 
 
