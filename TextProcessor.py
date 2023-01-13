@@ -528,6 +528,7 @@ class TextProcessor(object):
                                     "text": token.text,
                                     "lemma": token.lemma_,
                                     "pos": token.tag_,
+                                    "upos": token.pos_,
                                     "tok_index_doc": token.i,
                                     "tok_index_sent": (token.i - sentence.start),
                                     "is_stop": (lexeme.is_stop or lexeme.is_punct or lexeme.is_space)}

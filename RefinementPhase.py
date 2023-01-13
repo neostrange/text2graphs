@@ -266,6 +266,101 @@ class RefinementPhase():
         return ""
 
 
+
+
+
+    #To find head info for the FrameArgument i.e., with multi token as head
+    #// It shows when an action took place
+    # // case: when headword in an FA is a verb connected with preposition via MARK dep-parse relation.
+    # // the text is a clause starts with some temporal preposition such as 
+    # // after, before, 
+    # #// COMMON OBSERVATIONS: 
+    # #// - FA has type ARGM-TMP
+    #// - FA has some VERB denoting that its refering to some event
+    #// - FA has some signal that we could relate to some type of TLINK  
+    def get_and_assign_head_info_to_temporal_frameArgument_multitoken_mark(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+        
+        query = """    
+                        match p= (s:TagOccurrence where s.pos = 'IN')<-[:IS_DEPENDENT {type: 'mark'}]
+                        -(a:TagOccurrence where a.pos in ['VBD'])-
+                        [:PARTICIPATES_IN]->(f:FrameArgument where f.type = 'ARGM-TMP'), q= (a)-[:IS_DEPENDENT]->()--(f)
+                        where not exists ((a)<-[:IS_DEPENDENT]-()--(f))
+                        WITH f, a, p,s
+                        set f.head = a.text, f.headTokenIndex = a.tok_index_doc, f.syntacticType ='EVENTIVE', f.signal = s.text
+                        return p     
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
+
+    #To find head info for the FrameArgument which has type of ARGM-TMP i.e., with multi token as head
+    #// It shows when an action took place
+    # // case: when headword in an FA is a preposition connected with verb gerund (complement) via pcomp dep-parse relation.
+    # // the text is a clause starts with some temporal preposition such as 
+    # // after, before,    
+    #// COMMON OBSERVATIONS:
+    #// - FA has type ARGM-TMP
+    #// - FA has some VERB denoting that its refering to some event
+    #// - FA has some signal that we could relate to some type of TLINK
+    def get_and_assign_head_info_to_temporal_frameArgument_multitoken_pcomp(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+        
+        query = """    
+                        match p= (f)--(v:TagOccurrence {pos: 'VBG'})<-[l:IS_DEPENDENT {type: 'pcomp'}]-
+                        (a:TagOccurrence where a.pos in ['IN'])-[:PARTICIPATES_IN]->(f:FrameArgument where f.type = 'ARGM-TMP')
+                        where not exists ((a)<-[:IS_DEPENDENT]-()--(f))
+                        WITH f, a, p, v
+                        set f.head = a.text, f.headTokenIndex = a.tok_index_doc, f.syntacticType ='EVENTIVE', f.signal = a.text, f.complement = v.text
+                        return p     
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+    
+    #To find head info for the FrameArgument which has type of ARGM-TMP i.e., with multi token as head
+    #// CASE: has root as a verb. But this verb is acting like a preposition as it has POBJ link with an object. 
+    #// example can be following in 'following the European Central Bank' 
+    #// to see more detail: check pobj in https://downloads.cs.stanford.edu/nlp/software/dependencies_manual.pdf
+    #// COMMON OBSERVATIONS: 
+    #// - FA has type ARGM-TMP
+    #// - FA has some VERB denoting that its refering to some event
+    #// - FA has some signal that we could relate to some type of TLINK
+    def get_and_assign_head_info_to_temporal_frameArgument_multitoken_pobj(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+        
+        query = """    
+                        match p= (f)--(v:TagOccurrence)<-[l:IS_DEPENDENT {type: 'pobj'}]-
+                        (a:TagOccurrence where a.pos in ['IN', 'VBG'])-[:PARTICIPATES_IN]->(f:FrameArgument where f.type = 'ARGM-TMP')
+                        where not exists ((a)<-[:IS_DEPENDENT]-()--(f)) and a.text in ['following']
+                        WITH f, a, p, v
+                        set f.head = a.text, f.headTokenIndex = a.tok_index_doc, f.syntacticType ='EVENTIVE', f.signal = a.text, f.complement = v.text
+                        return p     
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
+
+
+
+
+
+
+
 # PHASE 2 
 # Linking FA to NamedEntity
 
@@ -539,7 +634,10 @@ if __name__ == '__main__':
     tp.get_and_assign_head_info_to_frameArgument_singletoken()
     tp.get_and_assign_head_info_to_frameArgument_multitoken()
     tp.get_and_assign_head_info_to_frameArgument_with_preposition()
-    
+    tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_mark()
+    tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_pcomp()
+
+
     tp.link_antecedent_to_namedEntity()
     tp.detect_correct_NEL_result_for_having_kb_id()
     tp.detect_correct_NEL_result_for_missing_kb_id()

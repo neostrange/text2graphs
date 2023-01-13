@@ -57,6 +57,8 @@ class GraphBasedNLP(GraphDBBase):
         self.execute_without_exception("CREATE CONSTRAINT ON (l:Evidence) ASSERT (l.id) IS NODE KEY")
         self.execute_without_exception("CREATE CONSTRAINT ON (l:Relationship) ASSERT (l.id) IS NODE KEY")
         self.execute_without_exception("CREATE CONSTRAINT ON (l:NounChunk) ASSERT (l.id) IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT ON (l:TEvent) ASSERT (l.eiid, l.doc_id) IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT ON (l:TIMEX) ASSERT (l.tid, l.doc_id) IS NODE KEY")
         #self.execute_without_exception("CREATE CONSTRAINT ON (l:CorefMention) ASSERT (l.id) IS NODE KEY")
 
         

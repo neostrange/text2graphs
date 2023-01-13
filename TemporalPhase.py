@@ -65,6 +65,24 @@ class TemporalPhase():
         return listDocIDs
 
 
+        #CASE 1 - to create a DCT node for a document*******
+        #-- this query should be executed in the beginning of the temporal phase. 
+        #-- precondition: the annotatedText should be there.
+    def create_DCT_node(self, doc_id):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """ match (ann:AnnotatedText where ann.id = """+str(doc_id)+""")
+                    merge (DCT:TIMEX {type: 'DATE', value: replace(split(ann.creationtime, 'T')[0],'-','') , tid: 'dct'+ toString(ann.id), 
+                    doc_id: ann.id})<-[:CREATED_ON]-(ann)
+                """
+        
+        data= graph.run(query).data()
+        
+        return ""
+
+
     def create_tlinks_e2e(self, doc_id):
 
         print(self.uri)
@@ -164,6 +182,7 @@ if __name__ == '__main__':
     # query for getting all AnnotatedDoc
     ids = tp.get_annotated_text()
     for id in ids:
+        tp.create_DCT_node(id)
         tp.create_tevents(id)
         tp.create_timexes(id)
         tp.create_tlinks_e2e(id)

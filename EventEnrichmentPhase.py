@@ -17,7 +17,9 @@ import configparser
 
 
 
-
+# This phase will run after the TemporalPhase.
+# NOTES: 
+## 
 class EventEnrichmentPhase():
 
     uri=""
