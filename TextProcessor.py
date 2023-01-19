@@ -313,9 +313,10 @@ class TextProcessor(object):
             dct= dct.replace('-','')
             # create a file
             filename = """/home/neo/environments/text2graphs/text2graphs/tarsqi-dataset/""" + str(record.get("n.id")) +"_"+ dct + ".xml" 
-            f = open(filename, "x")
-            f.write(record.get("n.text"))
-            f.close()
+            if not os.path.exists(filename):
+                f = open(filename, "x")
+                f.write(record.get("n.text"))
+                f.close()
             annotatedd_text_docs.append(t)
         
         return annotatedd_text_docs
@@ -689,10 +690,7 @@ class TextProcessor(object):
         
         
         self.execute_query(query2, {"documentId": document_id})
-
-
-
-
+     
 
     # we have two ner components in our pipeline i.e., spacy NER and DBpedia-spotlight 
     # we acheive high accuracy and recall by using both spacyNER and DBpedia-spotlight components. But we need to fuse their results.

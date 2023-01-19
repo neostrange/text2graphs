@@ -194,6 +194,7 @@ class RefinementPhase():
         return ""
 
     #To find head info for the FrameArgument i.e., with single token as head
+    # here head is noun or pronoun
     def get_and_assign_head_info_to_frameArgument_singletoken(self):
 
         print(self.uri)
@@ -215,7 +216,33 @@ class RefinementPhase():
         return ""
 
 
+    #To find head info for the FrameArgument i.e., with single token as head
+    # here head is noun or pronoun
+    def get_and_assign_head_info_to_temporal_frameArgument_singletoken(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                        match p= (a:TagOccurrence where a.pos in ['NNS', 'NN', 'NNP', 'NNPS','PRP', 'PRP$', 'RB'])--
+                        (c:FrameArgument {type:'ARGM-TMP'})
+                        where not exists ((a)<-[:IS_DEPENDENT]-()--(c)) and not exists ((a)-[:IS_DEPENDENT]->()--(c))
+                        WITH c, a, p
+                        set c.head = a.text, c.headTokenIndex = a.tok_index_doc,
+                        (case when a.pos in ['NNS', 'NN'] then c END).syntacticType ='NOMINAL' , 
+                        (case when a.pos in ['NNP', 'NNPS'] then c END).syntacticType ='NAM', 
+                        (case when a.pos in ['PRP', 'PRP$'] then c END).syntacticType ='PRO',
+                        (case when a.pos in ['RB'] then c END).syntacticType ='ADV'
+                        return p    
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
     #To find head info for the FrameArgument i.e., with multi token as head
+    #here the head is noun or pronoun
     def get_and_assign_head_info_to_frameArgument_multitoken(self):
 
         print(self.uri)
@@ -239,11 +266,13 @@ class RefinementPhase():
 
 
 
-    # // This query first find out those FrameArguments which have preposition as a headword. 
+    # // This query first find out those FrameArguments of type ['ARG1', 'ARG0', 'ARG2', 'ARG3', 'ARG4', 'ARGA', 'ARGM-TMP'] and
+    # // which have 'preposition' as a headword. 
     # // Then It finds out the complement (pobj) of the preposition and mark it as 
     # // complement. This complement will be used to refer to the entity. 
-    # // The preoposition word will help in understanding the type of association between frame and
-    # // frameargument with respect to the preposition and complement (noun) entity. 
+    # // NOTE: The preoposition word will help in understanding the type of association between frame and
+    # // the frameargument with respect to the preposition and complement (noun) entity. 
+    #// UPDATE: ARGM-TMP is added in the list of allowable types. 
     def get_and_assign_head_info_to_frameArgument_with_preposition(self):
 
         print(self.uri)
@@ -251,7 +280,7 @@ class RefinementPhase():
 
         query = """    
                         match p= (a:TagOccurrence where a.pos in ['IN'])--
-                        (f:FrameArgument where f.type in ['ARG1', 'ARG0', 'ARG2', 'ARG3', 'ARG4', 'ARGA']), q= (a)-[:IS_DEPENDENT]->()--(f)
+                        (f:FrameArgument where f.type in ['ARG1', 'ARG0', 'ARG2', 'ARG3', 'ARG4', 'ARGA', 'ARGM-TMP']), q= (a)-[:IS_DEPENDENT]->()--(f)
                         where not exists ((a)<-[:IS_DEPENDENT]-()--(f))
                         set f.head = a.text, f.headTokenIndex = a.tok_index_doc, f.syntacticType ='IN'
                         with *
@@ -634,8 +663,10 @@ if __name__ == '__main__':
     tp.get_and_assign_head_info_to_frameArgument_singletoken()
     tp.get_and_assign_head_info_to_frameArgument_multitoken()
     tp.get_and_assign_head_info_to_frameArgument_with_preposition()
+    tp.get_and_assign_head_info_to_temporal_frameArgument_singletoken()
     tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_mark()
     tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_pcomp()
+    tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_pobj()
 
 
     tp.link_antecedent_to_namedEntity()
