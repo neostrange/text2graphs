@@ -2,7 +2,7 @@ import os
 import spacy
 import sys
 #import neuralcoref
-import coreferee
+#import coreferee
 from util.SemanticRoleLabeler import SemanticRoleLabel
 from util.EntityFishingLinker import EntityFishing
 from spacy.tokens import Doc, Token, Span

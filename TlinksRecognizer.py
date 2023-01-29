@@ -158,6 +158,70 @@ class TlinksRecognizer():
         return ""
 
 
+
+
+    
+    # CASE 4 
+    # // event to timex
+    # // TIMEX is corresponding to the head of FA without any preposition
+    # // straight-forward case of IS_INCLUDED TLINK
+    def create_tlinks_case4(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """ MATCH p = (t:TIMEX)<-[:TRIGGERS]-(h:TagOccurrence where h.pos in ['NN','NNP'])-[:PARTICIPATES_IN]->
+                    (fa:FrameArgument {type: 'ARGM-TMP'})-[:PARTICIPANT]-(f:Frame)-[:DESCRIBES]->(e:TEvent)
+                    // TIMEX is corresponding to the head of FA without any preposition
+                    WHERE fa.headTokenIndex = h.tok_index_doc
+                    MERGE (e)-[tlink:TLINK]->(t)
+                    SET tlink.source = 't2g', tlink.relType = 'IS_INCLUDED'
+        
+        """
+
+        data= graph.run(query).data()
+        return ""
+
+
+
+    # CASE 5
+    # // Event to timex 
+    # //FAs of type ARGM-TMP with PREPOSITIONS
+    # // SIGNAL is the preposition (usually)
+    def create_tlinks_case5(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """ MATCH p = (t:TIMEX)<-[:TRIGGERS]-(pobj:TagOccurrence where pobj.pos in ['NN','NNP'])-[:PARTICIPATES_IN]->(fa:FrameArgument {type: 'ARGM-TMP', syntacticType: 'IN'})-[:PARTICIPANT]-(f:Frame)-[:DESCRIBES]->(e:TEvent)
+                    WHERE fa.complementIndex = pobj.tok_index_doc
+
+                    MERGE (e)-[tlink:TLINK]->(t)
+                    SET tlink.source = 't2g',
+                    (CASE WHEN t.type = 'DURATION' and toLower(fa.head) = 'for' and e.tense in ['PAST', 'PRESENT'] THEN tlink END).relType = 'MEASURE',
+                    (CASE WHEN t.type = 'DURATION' and toLower(fa.head) IN ['in', 'during'] THEN tlink END).relType = 'IS_INCLUDED',
+                    (CASE WHEN t.type = 'DURATION' and t.quant <> 'N/A' and fa.head IN ['in'] THEN tlink END).relType = 'AFTER',
+                    (CASE WHEN t.type = 'DURATION' and toLower(fa.head) IN ['for']and e.tense in ['PAST', 'PRESENT'] and e.aspect = 'PERFECTIVE' THEN tlink END).relType = 'BEGUN_BY',
+                    (CASE WHEN t.type = 'DATE' and toLower(fa.head) IN ['since'] THEN tlink END).relType = 'BEGUN_BY',
+                    (CASE WHEN t.type = 'DURATION' and toLower(fa.head) IN ['in'] THEN tlink END).relType = 'AFTER',
+                    (CASE WHEN t.type = 'DATE' and toLower(fa.head) IN ['by'] THEN tlink END).relType = 'ENDED_BY',
+                    (CASE WHEN t.type = 'DATE' and toLower(fa.head) IN ['until'] and e.tense in ['PAST'] THEN tlink END).relType = 'ENDED_BY',
+                    (CASE WHEN t.type = 'TIME' and toLower(fa.head) IN ['by'] THEN tlink END).relType = 'BEFORE',
+                    (CASE WHEN t.type in ['TIME', 'DATE', 'DURATION'] and toLower(fa.head) IN ['before'] THEN tlink END).relType = 'BEFORE',
+                    (CASE WHEN t.type in ['TIME', 'DATE', 'DURATION'] and toLower(fa.head) IN ['after'] THEN tlink END).relType = 'AFTER',
+                    (CASE WHEN t.type in ['TIME', 'DATE', 'DURATION'] and toLower(fa.head) IN ['on'] THEN tlink END).relType = 'IS_INCLUDED',
+                    (CASE WHEN t.type in ['TIME', 'DATE'] and toLower(fa.head) IN ['on'] THEN tlink END).relType = 'IS_INCLUDED'
+
+                    //return p
+                    //MERGE (e)-[tlink:TLINK]->(t)
+                    //SET tlink.source = 't2g', tlink.relType = 'IS_INCLUDED'
+        
+        """
+
+        data= graph.run(query).data()
+        return ""
+
+
     # / PURPOSE: To add/link core-participants to an Event object. Core-Participants include ['ARG0','ARG1','ARG2','ARG3','ARG4']
     # // PRECONDITION: Event is already linked with the corresponding Frame
     # //               FrameArgument is referring to an Entity
@@ -211,4 +275,6 @@ if __name__ == '__main__':
     tp.create_tlinks_case1()
     tp.create_tlinks_case2()
     tp.create_tlinks_case3()
+    tp.create_tlinks_case4()
+    tp.create_tlinks_case5()
         

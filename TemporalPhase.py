@@ -77,7 +77,7 @@ class TemporalPhase():
                     doc_id: ann.id})<-[:CREATED_ON]-(ann)
                 """
         
-        data= graph.run(query).data()
+        data= graph.run(query,parameters={'doc_id': doc_id}).data()
         
         return ""
 
@@ -221,6 +221,59 @@ class TemporalPhase():
         
         return ""
 
+
+
+
+    def callTtkService(self, parameters):
+        dct = parameters.get("dct")
+        text = parameters.get("text")
+        
+        #String.replace(split(ann.creationtime, 'T')[0],'-','')
+
+
+        dct = dct.split('T')[0]
+
+        dct.replace('-','')
+
+        data = {"input":text, "dct": dct}
+
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+
+
+        response = requests.post("http://localhost:5050/annotate", json=data, headers=headers)
+
+        # print(response.content)
+        return response.text
+
+
+    def create_tevents2(self, doc_id):
+
+        response_dict = self.get_doc_text_and_dct(doc_id)
+
+        result_xml= self.callTtkService(response_dict)
+        doc_id = str(doc_id)
+
+        #print(result_xml)
+
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+
+
+        query = """WITH $result_xml
+                    AS xmlString
+                    WITH apoc.xml.parse(xmlString) AS result
+                    UNWIND [item in result._children where item._type ="tarsqi_tags"] AS tarsqi
+                    UNWIND [item in tarsqi._children where item._type ="EVENT"] AS event
+                    WITH event.begin as begin, event.end as end, event.aspect as aspect, event.class as class, event.eid as eid, event.eiid as eiid, event.epos as epos, event.form as form, event.pos as pos, event.tense as tense
+                    match (a:AnnotatedText {id:"""+str(doc_id)+"""})-[*2]->(ta:TagOccurrence) where ta.index= toInteger(begin) 
+                    MERGE (ta)-[:TRIGGERS]->(event:TEvent{doc_id:"""+str(doc_id)+""", eiid:eiid}) set event.begin=toInteger(begin), event.end=toInteger(end), event.aspect=aspect, event.class=class,  event.epos=epos, event.form=form, event.pos=pos, event.tense=tense"""
+        
+        data= graph.run(query,parameters={'result_xml': result_xml, 'doc_id': doc_id}).data()
+        
+        return ""
+
+
+
     def create_tevents(self, doc_id):
 
         print(self.uri)
@@ -248,7 +301,7 @@ if __name__ == '__main__':
     for id in ids:
         
         tp.create_DCT_node(id)
-        tp.create_tevents(id)
+        tp.create_tevents2(id)
         #tp.create_timexes(id)
         tp.create_timexes2(id)
         #tp.create_tlinks_e2e(id)
