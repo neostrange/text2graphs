@@ -17,6 +17,7 @@ def callHeidelTimeService(parameters):
     return response.text
 
 def callAllenNlpApi(apiName, string):
+    #URL = "https://35.247.6.38/api/"+apiName+"/predict"
     URL = "https://demo.allennlp.org/api/"+apiName+"/predict"
     #URL = "http://localhost:8080/api/"+apiName+"/predict"
 

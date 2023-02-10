@@ -218,6 +218,30 @@ class RefinementPhase():
 
     #To find head info for the FrameArgument i.e., with single token as head
     # here head is noun or pronoun
+    def get_and_assign_head_info_to_all_frameArgument_singletoken(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                        match p= (a:TagOccurrence where a.pos in ['NNS', 'NN', 'NNP', 'NNPS','PRP', 'PRP$'])--(c:FrameArgument)
+                        where not exists ((a)<-[:IS_DEPENDENT]-()--(c)) and not exists ((a)-[:IS_DEPENDENT]->()--(c))
+                        WITH c, a, p
+                        set c.head = a.text, c.headTokenIndex = a.tok_index_doc, c.headPos = a.pos
+                        return p
+    
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
+
+        
+
+    #To find head info for the FrameArgument i.e., with single token as head
+    # here head is noun or pronoun
     def get_and_assign_head_info_to_temporal_frameArgument_singletoken(self):
 
         print(self.uri)
@@ -265,6 +289,29 @@ class RefinementPhase():
         return ""
 
 
+
+ 
+
+
+
+
+    #General rule to get and assign head of all multi-token framearguments
+    def get_and_assign_head_info_to_all_frameArgument_multitoken(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+        
+        query = """    
+                        match p= (a:TagOccurrence)-[:PARTICIPATES_IN]->(f:FrameArgument), q= (a)-[:IS_DEPENDENT]->()--(f)
+                        where not exists ((a)<-[:IS_DEPENDENT]-()--(f))
+                        WITH f, a, p
+                        set f.head = a.text, f.headTokenIndex = a.tok_index_doc, f.headPos = a.pos 
+                        return p    
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
 
     # // This query first find out those FrameArguments of type ['ARG1', 'ARG0', 'ARG2', 'ARG3', 'ARG4', 'ARGA', 'ARGM-TMP'] and
     # // which have 'preposition' as a headword. 
@@ -650,6 +697,28 @@ class RefinementPhase():
         return ""
 
 
+    #//It connects frame argument to numeric entities.
+    #//PRECONDITION: query 'detect_quantified_entities_from_frameArgument' in refinment phase must be run before this. 
+    #//Because, cases like 'millions of people' actually refering to nominal rather numeric
+    #//It checks that frame argument is not yet connected to entity. If it exists it means it is a case about quantified entities. 
+    def link_frameArgument_to_numeric_entities(self):
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                        MATCH p = (f:FrameArgument)<-[:PARTICIPATES_IN]-(t:TagOccurrence)-[:PARTICIPATES_IN]->(e:NUMERIC)
+                        where f.headTokenIndex = t.tok_index_doc and not exists ((f)-[:REFERS_TO]-(:Entity))
+                        merge (f)-[:REFERS_TO]-(e)
+                        return p
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
+
+
 
 if __name__ == '__main__':
     tp= RefinementPhase(sys.argv[1:])
@@ -660,6 +729,11 @@ if __name__ == '__main__':
     tp.get_and_assign_head_info_to_antecedent_singletoken()
     tp.get_and_assign_head_info_to_corefmention_multitoken()
     tp.get_and_assign_head_info_to_corefmention_singletoken()
+
+    # it assigns the grammatical head to all the framearguments without any condition or filter 
+    tp.get_and_assign_head_info_to_all_frameArgument_singletoken()
+    tp.get_and_assign_head_info_to_all_frameArgument_multitoken()
+    
     tp.get_and_assign_head_info_to_frameArgument_singletoken()
     tp.get_and_assign_head_info_to_frameArgument_multitoken()
     tp.get_and_assign_head_info_to_frameArgument_with_preposition()
@@ -667,6 +741,7 @@ if __name__ == '__main__':
     tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_mark()
     tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_pcomp()
     tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_pobj()
+    
 
 
     tp.link_antecedent_to_namedEntity()
@@ -677,10 +752,12 @@ if __name__ == '__main__':
     tp.link_frameArgument_to_namedEntity_for_pobj()
     tp.link_frameArgument_to_namedEntity_for_pobj_entity()
     tp.link_frameArgument_to_namedEntity_for_pro()
+    
     tp.link_frameArgument_to_new_entity()
     
     tp.tag_numeric_entities()
     tp.detect_quantified_entities_from_frameArgument()
+    tp.link_frameArgument_to_numeric_entities()
     tp.link_frameArgument_to_entity_via_named_entity()
 
 

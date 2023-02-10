@@ -462,7 +462,11 @@ class TextProcessor(object):
             sentence_id = self.store_sentence(sentence, annotated_text, text_id, i, storeTag)
             #spans = list(doc.ents) + list(doc.noun_chunks) - just removed so that only entities get stored.
             #spans = list(doc.ents) - just disabled it as testing dbpedia spotlight
-            spans = list(doc.ents) + list(doc.spans['ents_original'])
+            spans = ''
+            if doc.spans.get('ents_original') != None:
+                spans = list(doc.ents) + list(doc.spans['ents_original'])
+            else:
+                spans = list(doc.ents)
             #spans = filter_spans(spans) - just disabled it as testing dbpedia spotlight
             i += 1
         return spans
