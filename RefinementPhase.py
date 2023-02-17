@@ -495,7 +495,8 @@ class RefinementPhase():
                         MATCH p= (f:FrameArgument where f.type in ['ARG0','ARG1','ARG2','ARG3','ARG4'])-[:PARTICIPATES_IN]-
                         (complementHead:TagOccurrence)
                         where f.complementIndex = complementHead.tok_index_doc and not exists 
-                        ((complementHead)-[]-(:NamedEntity {headTokenIndex: complementHead.tok_index_doc}))
+                        ((complementHead)-[]-(:NamedEntity {headTokenIndex: complementHead.tok_index_doc})) and not exists
+                        ((f)-[:REFERS_TO]-(:NamedEntity))
                         merge (complementHead)-[:PARTICIPATES_IN]->(e:Entity 
                         {id:f.complementFullText, type:complementHead.pos, syntacticType:complementHead.pos, head:f.complement, 
                         headTokenIndex:f.complementIndex})
@@ -578,15 +579,32 @@ class RefinementPhase():
 
 
     
-# //It will add another label to named entities that are qualified as numeric.
+# //It will add another label to named entities that are qualified as value.
     def tag_numeric_entities(self):
 
         print(self.uri)
         graph = Graph(self.uri, auth=(self.username, self.password))
 
         query = """    
-                        match (ne:NamedEntity) where ne.type in ['CARDINAL', 'ORDINAL', 'MONEY', 'QUANTITY', 'PERCENT']
+                        match (ne:NamedEntity) where ne.type in ['MONEY', 'QUANTITY', 'PERCENT']
                         set ne:NUMERIC   
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+
+
+
+    # //It will add another label to named entities that are qualified as value.
+    def tag_value_entities(self):
+
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                        match (ne:NamedEntity) where ne.type in ['CARDINAL', 'ORDINAL', 'MONEY', 'QUANTITY', 'PERCENT']
+                        set ne:VALUE   
         
         """
         data= graph.run(query).data()
@@ -730,9 +748,10 @@ if __name__ == '__main__':
     tp.get_and_assign_head_info_to_corefmention_multitoken()
     tp.get_and_assign_head_info_to_corefmention_singletoken()
 
-    # it assigns the grammatical head to all the framearguments without any condition or filter 
+    # NOTE: it assigns the grammatical head to all the framearguments without any condition or filter 
     tp.get_and_assign_head_info_to_all_frameArgument_singletoken()
     tp.get_and_assign_head_info_to_all_frameArgument_multitoken()
+    # -----------------------------------------------------------------------------------------------
     
     tp.get_and_assign_head_info_to_frameArgument_singletoken()
     tp.get_and_assign_head_info_to_frameArgument_multitoken()
@@ -755,6 +774,7 @@ if __name__ == '__main__':
     
     tp.link_frameArgument_to_new_entity()
     
+    tp.tag_value_entities()
     tp.tag_numeric_entities()
     tp.detect_quantified_entities_from_frameArgument()
     tp.link_frameArgument_to_numeric_entities()
