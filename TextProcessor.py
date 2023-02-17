@@ -696,15 +696,18 @@ class TextProcessor(object):
         self.execute_query(query2, {"documentId": document_id})
      
 
-    # we have two ner components in our pipeline i.e., spacy NER and DBpedia-spotlight 
-    # we acheive high accuracy and recall by using both spacyNER and DBpedia-spotlight components. But we need to fuse their results.
-    # we get two lists of namedEntities, one from spacyNER and other from DBpedia-spotlight
-    # sometimes we get duplicate entities, spans of text that have been classified by both components. HEAD word determine duplicate entries
-    # we have to remove the duplicate entries. 
-    # We give priority to spacyNER for these types (preferred list): 'CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', 'PERCENT'
-    # for rest of the entities we give preference to DBpedia-spotlight result.
-    # BUT, there are few entries that have not been detected by DBpedia-spotlight but detected in spacyNER. And they are not 
-    # from preferred list. We will keep those entities as it is.   
+    #In our pipeline, we employed two named entity recognition (NER) components, 
+    # namely the spaCy NER and DBpedia-spotlight. By using both components, we were able 
+    # to achieve high accuracy and recall. However, we needed to merge the results from 
+    # these two components. To do this, we obtained two lists of named entities, one from
+    #  spaCy NER and the other from DBpedia-spotlight. In some instances, we found duplicate
+    #  entities or text spans that were classified by both components. 
+    # We used the HEAD word to determine duplicate entries and removed them. 
+    # We prioritized the results from spaCy NER for certain types of entities, 
+    # specifically those classified as 'CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', or 'PERCENT'.
+    #  For the rest of the entities, we gave priority to the results from DBpedia-spotlight.
+    #  However, there were instances where entities were detected by spaCy NER but not by DBpedia-spotlight 
+    # and were not part of the preferred list. In such cases, we kept those entities as is.   
 
     def deduplicate_named_entities(self, document_id):
 
@@ -860,6 +863,15 @@ class TextProcessor(object):
             MERGE (text)<-[:DESCRIBES {rank: keyword.rank}]-(kw)
         """
         self.execute_query(ne_query, {"documentId": document_id, "keywords": keywords})
+
+
+
+#For the purpose of mapping named entities to entity instances in our pipeline, we distinguished between two types of named entities.
+#  The first type includes entities that have been successfully disambiguated and assigned a unique KBID by the entity disambiguation module.
+#  These entities can be easily mapped by creating instances based on the distinct KBIDs. The second type of named entities, 
+# however, are unknown to the entity disambiguation module and are assigned a NULL KBID. To map these named entities, we rely on the text of
+#  the named entity's span and its assigned type, which was determined by the NER component. As a result, named entity mentions with the 
+# same text value and type are considered to refer to a single entity instance.
 
     def build_entities_inferred_graph(self, document_id):
         extract_direct_entities_query = """
