@@ -436,10 +436,12 @@ class TextProcessor(object):
         #"""
 
         
-    def create_annotated_text(self, filename, content, id):
-        filename = "file://" + filename
-        query = """ CALL apoc.load.xml($filename) 
-        YIELD value
+    def create_annotated_text(self, data, content, id):
+        #filename = "file://" + filename
+
+        query = """ WITH $data
+        AS xmlString 
+        WITH apoc.xml.parse(xmlString) AS value
         UNWIND [item in value._children where item._type ="nafHeader"] AS nafHeader
         UNWIND [item in value._children where item._type ="raw"] AS raw
         UNWIND [item in nafHeader._children where item._type = "fileDesc"] AS fileDesc
@@ -447,7 +449,17 @@ class TextProcessor(object):
         WITH  fileDesc.author as author, fileDesc.creationtime as creationtime, fileDesc.filename as filename, fileDesc.filetype as filetype, fileDesc.title as title, public.publicId as publicId, public.uri as uri, raw._text as text
         MERGE (at:AnnotatedText {id: $id}) set at.author = author, at.creationtime = creationtime, at.filename = filename, at.filetype = filetype, at.title = title, at.publicId = publicId, at.uri = uri, at.text = $text
         """
-        params = {"id": id, "filename":filename, "text": content}
+        # query = """ CALL apoc.load.xml($filename) 
+        # YIELD value
+        # UNWIND [item in value._children where item._type ="nafHeader"] AS nafHeader
+        # UNWIND [item in value._children where item._type ="raw"] AS raw
+        # UNWIND [item in nafHeader._children where item._type = "fileDesc"] AS fileDesc
+        # UNWIND [item in nafHeader._children where item._type = "public"] AS public
+        # WITH  fileDesc.author as author, fileDesc.creationtime as creationtime, fileDesc.filename as filename, fileDesc.filetype as filetype, fileDesc.title as title, public.publicId as publicId, public.uri as uri, raw._text as text
+        # MERGE (at:AnnotatedText {id: $id}) set at.author = author, at.creationtime = creationtime, at.filename = filename, at.filetype = filetype, at.title = title, at.publicId = publicId, at.uri = uri, at.text = $text
+        # """
+        params = {"id": id, "data":data, "text": content}
+        #params = {"id": id, "filename":data}
         print(query)
         results = self.execute_query(query, params)
         #return results[0]
@@ -879,7 +891,7 @@ class TextProcessor(object):
             WHERE document.id = $documentId
             WITH document
             MATCH (document)-[*3..3]->(ne:NamedEntity)
-            WHERE NOT ne.type IN ['NP', 'ORDINAL', 'NUMBER', 'MONEY', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NOT NULL
+            WHERE NOT ne.type IN ['NP', 'TIME', 'ORDINAL', 'NUMBER', 'MONEY', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NOT NULL
             WITH ne
             MERGE (entity:Entity {type: ne.type, kb_id:ne.kb_id, id: split(ne.kb_id, '/')[-1]})
             MERGE (ne)-[:REFERS_TO {type: "evoke"}]->(entity)
@@ -905,7 +917,7 @@ class TextProcessor(object):
             WHERE document.id = $documentId
             WITH document
             MATCH (document)-[*3..3]->(ne:NamedEntity)
-            WHERE NOT ne.type IN ['NP', 'ORDINAL', 'MONEY', 'NUMBER', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NULL
+            WHERE NOT ne.type IN ['NP', 'TIME', 'ORDINAL', 'MONEY', 'NUMBER', 'DATE', 'CARDINAL', 'QUANTITY', 'PERCENT'] AND ne.kb_id IS NULL
             WITH ne
             MERGE (entity:Entity {type: ne.type, kb_id:ne.value, id:ne.value})
             MERGE (ne)-[:REFERS_TO {type: "evoke"}]->(entity)

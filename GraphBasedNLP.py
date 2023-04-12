@@ -67,6 +67,7 @@ class GraphBasedNLP(GraphDBBase):
     # keeping copies of files at both sides is temporaray solution, later we can keep files and neo4j instance at same location
     def store_corpus(self, directory):
         text_id = 1
+        path= '/home/neo/environments/text2graphs/text2graphs/dataset/'
         for filename in os.listdir(directory):
             f = os.path.join(directory, filename)
             # checking if it is a file
@@ -78,8 +79,13 @@ class GraphBasedNLP(GraphDBBase):
                 text = root[1].text
                 #text = text.replace('\n\n','. ')
                 text = text.replace('\n','')
+                # getting the text of the file as string
+                text_file = open(path+filename, 'r')
+                data = text_file.read()
+                text_file.close()
                 #storing the corpus files as nodes in neo4j with meta-data
-                self.__text_processor.create_annotated_text(filename, text, text_id)
+                #self.__text_processor.create_annotated_text(filename, text, text_id)
+                self.__text_processor.create_annotated_text(data, text, text_id)
                 text_id+=1
         
         text_tuples = tuple(self.__text_processor.get_annotated_text())

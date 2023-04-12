@@ -14,7 +14,10 @@ import requests
 import json
 
 
-
+# call TTK service which uses TARSQI toolkit and 
+# call Heideltime service for temporal expression detection and normalization
+# It also stores the DCT i.e., document creation time.
+# ORDER of EXECUTION: after refinement phase
 
 class TemporalPhase():
 
