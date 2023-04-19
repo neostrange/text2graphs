@@ -531,7 +531,7 @@ class RefinementPhase():
         return ""
 
     # // this query try to find those FAs who do not have any entity instance created during NER or NEL.  
-    # // MISSING: fields such as extent, type(set here temporarily). Further, entity disambiguation and deduplication may be required. 
+    # // TODO: fields such as extent, type(set here temporarily). Further, entity disambiguation and deduplication may be required. 
     # // coreferencing information can be employed to deduplicate entities.
     # // CASES NOT COVERED: 
     # // 1: when FA has text span which has more than one entity. For example, 'millions of people', here we have million as numeric and millions of people as nominal.
@@ -548,10 +548,10 @@ class RefinementPhase():
                         -[:PARTICIPATES_IN]-(h:TagOccurrence where not  h.pos  in ['IN'])
                         where f.headTokenIndex = h.tok_index_doc 
                         and not exists ((h)-[]-(:NamedEntity {headTokenIndex: h.tok_index_doc}))
-                        merge (h)-[:PARTICIPATES_IN]->(e:Entity {id:f.text, type:f.syntacticType, 
-                        syntacticType:f.syntacticType, head:f.head, headTokenIndex:f.headTokenIndex})
+                        merge (e:Entity {id:f.text, type:f.syntacticType, 
+                        syntacticType:f.syntacticType, head:f.head})
                         merge (f)-[:REFERS_TO]->(e)
-                        RETURN p      
+                        RETURN p     
         
         """
         data= graph.run(query).data()

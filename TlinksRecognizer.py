@@ -210,6 +210,8 @@ class TlinksRecognizer():
                     (CASE WHEN t.type in ['TIME', 'DATE', 'DURATION'] and toLower(fa.head) IN ['before'] THEN tlink END).relType = 'BEFORE',
                     (CASE WHEN t.type in ['TIME', 'DATE', 'DURATION'] and toLower(fa.head) IN ['after'] THEN tlink END).relType = 'AFTER',
                     (CASE WHEN t.type in ['TIME', 'DATE', 'DURATION'] and toLower(fa.head) IN ['on'] THEN tlink END).relType = 'IS_INCLUDED',
+                    //case added as per the observation during evaluation for 'in' e.g.,Temporal FA 'in the third quarter of this year' should be mentioned with 'IS_INCLUDED'
+                    (CASE WHEN t.type in ['TIME', 'DATE', 'DURATION'] and toLower(fa.head) IN ['in'] THEN tlink END).relType = 'IS_INCLUDED',
                     (CASE WHEN t.type in ['TIME', 'DATE'] and toLower(fa.head) IN ['on'] THEN tlink END).relType = 'IS_INCLUDED'
 
                     //return p
@@ -236,13 +238,16 @@ class TlinksRecognizer():
         graph = Graph(self.uri, auth=(self.username, self.password))
 
         query = """ MATCH p = (e:TEvent)<-[:TRIGGERS]-(t:TagOccurrence)<-[:HAS_TOKEN]-(s:Sentence)<-[:CONTAINS_SENTENCE]-(ann:AnnotatedText)-[:CREATED_ON]->(dct:TIMEX)
-                    WHERE e.modal IS NULL and NOT e.tense IN ['PRESPART', 'PASPART', 'INFINITIVE'] and NOT t.pos  IN ['NNP', 'NNS', 'NN']
+                    WHERE e.modal IS NULL and NOT e.tense IN ['PRESPART', 'PASPART', 'INFINITIVE'] and NOT t.pos  IN ['NNP', 'NNS', 'NN'] 
+                    //AND NOT (e.tense IN ['PRESENT'] and e.aspect IN ['NONE'])
                     MERGE (e)-[tlink:TLINK]-(dct)
                     SET tlink.source = 't2g',
                     (CASE WHEN e.tense in ['FUTURE'] THEN tlink END).relType = 'AFTER',
                     (CASE WHEN e.tense in ['PRESENT'] and e.aspect = 'PROGRESSIVE' THEN tlink END).relType = 'IS_INCLUDED',
-                    (CASE WHEN e.tense in ['PAST'] THEN tlink END).relType = 'BEFORE',
-                    (CASE WHEN e.tense in ['PRESENT'] and e.aspect = 'PERFECTIVE' THEN tlink END).relType = 'BEFORE'
+                    (CASE WHEN e.tense in ['PAST'] THEN tlink END).relType = 'IS_INCLUDED',
+                    (CASE WHEN e.tense in ['PRESENT'] and e.aspect = 'PERFECTIVE' THEN tlink END).relType = 'BEFORE',
+                    (CASE WHEN e.tense in ['PASTPART'] and e.aspect = 'NONE' THEN tlink END).relType = 'IS_INCLUDED'
+
                     RETURN p
         
         """
@@ -318,9 +323,9 @@ if __name__ == '__main__':
     # query for getting all AnnotatedDoc
 
     #this method is temporary here, will be added into other class file later. 
-    tp.link_event_to_frame()
+    #tp.link_event_to_frame()
     tp.tag_modal_frame()
-    tp.add_event_participants()
+    #tp.add_event_participants()
     tp.create_tlinks_case1()
     tp.create_tlinks_case2()
     tp.create_tlinks_case3()
