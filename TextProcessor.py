@@ -469,7 +469,7 @@ class TextProcessor(object):
         return ""
 
     def process_sentences(self, annotated_text, doc, storeTag, text_id):
-        i = 1
+        i = 0
         for sentence in doc.sents:
             sentence_id = self.store_sentence(sentence, annotated_text, text_id, i, storeTag)
             #spans = list(doc.ents) + list(doc.noun_chunks) - just removed so that only entities get stored.
