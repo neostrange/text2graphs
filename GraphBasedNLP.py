@@ -1,5 +1,6 @@
 import os
 import spacy
+# from spacy.language import Language
 import sys
 #import neuralcoref
 #import coreferee
@@ -20,6 +21,16 @@ import xml.etree.ElementTree as ET
 
 class GraphBasedNLP(GraphDBBase):
 
+    """ @Language.component("segm")
+    def set_custom_segmentation(doc):
+        for token in doc[:-1]:
+            if token.text == '#':
+                doc[token.i+1].is_sent_start = True
+                
+            # else:
+            #     doc[token.i+1].is_sent_start = False
+        return doc """
+
     def __init__(self, argv):
         super().__init__(command=__file__, argv=argv)
         spacy.prefer_gpu()
@@ -30,6 +41,7 @@ class GraphBasedNLP(GraphDBBase):
         #self.nlp.add_pipe('opentapioca')
         #self.nlp.add_pipe("entityfishing", config= {"api_ef_base": "http://localhost:8090/service", "extra_info": True})
         # add the pipeline stage
+        # self.nlp.add_pipe('segm', before='parser')
         self.nlp.add_pipe('dbpedia_spotlight', config={'confidence': 0.5, 'overwrite_ents': True})
         
         #self.nlp.add_pipe('coreferee')
