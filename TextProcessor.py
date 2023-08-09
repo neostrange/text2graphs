@@ -1,4 +1,5 @@
 from cgitb import text
+import requests
 from distutils.command.config import config
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
@@ -15,6 +16,7 @@ from spacy.tokens import Doc, Token, Span
 from spacy.language import Language
 import textwrap
 from util.RestCaller import callAllenNlpApi
+from util.RestCaller import amuse_wsd_api_call
 from transformers import logging
 logging.set_verbosity_error()
 from py2neo import Graph
@@ -23,6 +25,9 @@ import configparser
 import os
 from util.RestCaller import callAllenNlpApi
 from util.CallAllenNlpCoref import callAllenNlpCoref
+import traceback
+from nltk.corpus import wordnet31 as wn
+
 
 
 
@@ -427,9 +432,205 @@ class TextProcessor(object):
         # print("------------------------------------------------")
         # print(tok._.SRL)
 
-    
+
+    ######################################################################### Token Enrichement with Wordnet ################################################################
 
     
+
+    # Function to get hypernyms for a synset
+    def get_all_hypernyms(self, synset):
+        hypernyms = []
+        hypernym_synsets = synset.hypernyms()
+        for hypernym_synset in hypernym_synsets:
+            hypernyms.append(hypernym_synset.name())  # Store hypernym synset name
+            hypernyms.extend(self.get_all_hypernyms(hypernym_synset))  # Recursive call to get hypernyms of hypernyms
+        return hypernyms
+
+    # Function to get synonyms of a synset
+    def get_synonyms(self, synset):
+        synonyms = []
+        for lemma in synset.lemmas():
+            synonyms.append(lemma.name())  # Store synonym
+        return synonyms
+
+    # Function to get domain labels for a synset
+    def get_domain_labels(self, synset):
+        domain_labels = []
+        topic_domains = synset.topic_domains()
+        for domain in topic_domains:
+            domain_labels.extend(domain.split("."))
+        return domain_labels
+
+    # Assuming you have a running Neo4j server and a connected driver instance called 'driver'
+    def assign_synset_info_to_tokens(self, doc_id):
+        with self._driver.session() as session:
+            # Step 1: Retrieve all Sentence nodes for the given AnnotatedText document
+            query = """
+            MATCH (d:AnnotatedText {id: $doc_id})-[:CONTAINS_SENTENCE]->(s:Sentence)
+            RETURN s.id AS sentence_id, s.text AS sentence_text
+            """
+            params = {"doc_id": doc_id}
+            result = self.execute_query3(query, params)
+
+            for record in result:
+                sentence_id = record["sentence_id"]
+                sentence_text = record["sentence_text"]
+
+                # Step 2: Retrieve the linked Token nodes for each Sentence node
+                query = """
+                MATCH (s:Sentence {id: $sentence_id})-[:HAS_TOKEN]->(t:TagOccurrence)
+                RETURN t.id AS token_id, t.nltkSynset AS nltkSynset, t.wnSynsetOffset AS wnSynsetOffset
+                """
+                params = {"sentence_id": sentence_id}
+                token_result = self.execute_query3(query, params)
+
+                for token_record in token_result:
+                    token_id = token_record["token_id"]
+                    #wn_synset_offset = token_record["wnSynsetOffset"]
+                    nltk_synset = token_record["nltkSynset"]
+
+                    
+
+                    #print(wn_synset_offset)
+
+                    if nltk_synset and nltk_synset != 'O':
+
+                        synset = wn.synset(nltk_synset)
+                        synset_identifier = synset.name()
+                        print(synset_identifier)
+                        lemma, pos, sense_num = synset_identifier.split('.')
+                        #print("Lemma:", lemma)
+                        #print("POS:", pos)
+                        #print("Sense Number:", sense_num)
+
+                        wn_synset_offset = synset.offset()
+                        wn_synset_offset = str(wn_synset_offset) + pos
+
+
+                        # Step 3: Get synset information from WordNet
+                        synset = wn.synset_from_pos_and_offset(wn_synset_offset[-1], int(wn_synset_offset[:-1]))
+
+                        # Get hypernyms, synonyms, and domain labels for the synset
+                        hypernyms = self.get_all_hypernyms(synset)
+                        synonyms = self.get_synonyms(synset)
+                        domain_labels = self.get_domain_labels(synset)
+
+                        # Update the Token node in Neo4j with synset-related information
+                        update_query = """
+                        MATCH (t:TagOccurrence {id: $token_id})
+                        SET t.hypernyms = $hypernyms, t.wn31SynsetOffset = $wn31SynsetOffset, t.synonyms = $synonyms, t.domain_labels = $domain_labels
+                        """
+                        params = {
+                            "token_id": token_id,
+                            "hypernyms": hypernyms,
+                            "synonyms": synonyms,
+                            "domain_labels": domain_labels,
+                            "wn31SynsetOffset": wn_synset_offset
+                        }
+                        self.execute_query3(update_query, params)  # Call your existing execute_query method
+                    else:
+                        print(f"Synset offset 'O' or empty for token_id: {token_id}. Skipping processing.")
+
+
+
+
+
+
+
+
+
+
+########################################################
+   
+
+
+
+    #########################################################################################################################################################################
+
+    ######################################################################### Word Sense Disambiguation Code #################################################################
+    def amuse_wsd_api_call(self, api_endpoint, sentence):
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        data = [{"text": sentence, "lang": "EN"}]
+
+        try:
+            response = requests.post(api_endpoint, json=data, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error while calling AMuSE-WSD API: {e}")
+            return None
+        
+
+    def update_tokens_in_neo4j(self, sentence_id, token_index, token_attrs):
+        query = """
+            MATCH (s:Sentence {id: $sentence_id})-[:HAS_TOKEN]->(t:TagOccurrence {tok_index_sent: $index})
+            SET t.bnSynsetId = $bnSynsetId,
+                t.wnSynsetOffset = $wnSynsetOffset,
+                t.nltkSynset = $nltkSynset
+        """
+
+        params = {
+            "sentence_id": sentence_id,
+            "index": token_index,
+            "bnSynsetId": token_attrs['bnSynsetId'],
+            "wnSynsetOffset": token_attrs['wnSynsetOffset'],
+            "nltkSynset": token_attrs['nltkSynset']
+        }
+
+        self.execute_query(query, params)
+
+
+    
+        
+    def perform_wsd(self, document_id):
+
+        amuze_wsd_api_endpoint = "http://localhost:81/api/model"
+        
+        query = """ MATCH (d:AnnotatedText {id: $doc_id})-[:CONTAINS_SENTENCE]->(s:Sentence) RETURN s.id AS sentence_id, s.text AS text """
+        params = {"doc_id": document_id}
+        result = self.execute_query3(query, params)
+
+
+        # amuze_wsd_api_endpoint = "http://localhost:81/api/model"
+        
+        # query = """MATCH (d:AnnotatedText {id: $doc_id})-[:CONTAINS_SENTENCE]->(s:Sentence) RETURN s.id AS sentence_id, s.text AS text"""
+        # params = {"doc_id": document_id}
+        # result = self.execute_query(query, params)
+
+        sentences_to_process = []
+        sentence_ids = []
+
+        for record in result:
+            sentence_id = record["sentence_id"]
+            sentence_text = record["text"]
+
+            # Collect sentences to process in batches
+            sentences_to_process.append(sentence_text)
+            sentence_ids.append(sentence_id)
+
+        # Step 2.1: Call the AMuSE-WSD API with multiple sentences
+        api_response = amuse_wsd_api_call(amuze_wsd_api_endpoint, sentences_to_process)
+
+        if api_response:
+            for idx, sentence_data in enumerate(api_response):
+                sentence_id = sentence_ids[idx]
+
+                # Step 2.2: Update the associated Token nodes in Neo4j with the API response
+                for token_data in sentence_data['tokens']:
+                    token_index = token_data['index']
+                    token_attrs = {
+                        'bnSynsetId': token_data['bnSynsetId'],
+                        'wnSynsetOffset': token_data['wnSynsetOffset'],
+                        'nltkSynset': token_data['nltkSynset']
+                    }
+
+                    self.update_tokens_in_neo4j(sentence_id=sentence_id, token_index=token_index, token_attrs=token_attrs)
+
+
+########################################################## End of Section: Word Sense Disambiguation ################################################################    
 
  # query = """MERGE (ann:AnnotatedText {id: $id})
        #     RETURN id(ann) as result
@@ -962,6 +1163,23 @@ class TextProcessor(object):
         self.execute_query(extract_relationships_query, {"documentId": document_id})
 
 
+    def execute_query3(self, query, params):
+        session = None
+        results = []
+
+        try:
+            session = self._driver.session()
+            response = session.run(query, params)
+            for item in response:
+                results.append(item)
+        except Exception as e:
+            print("Query Failed: ", e)
+        finally:
+            if session is not None:
+                session.close()
+        return results
+
+
     def execute_query(self, query, params):
         session = None
         response = None
@@ -974,7 +1192,8 @@ class TextProcessor(object):
                 item = items["result"]
                 results.append(item)
         except Exception as e:
-            print("Query Failed: ", e)
+            print("Query Failed: ", str(e))
+            traceback.print_exc()
         finally:
             if session is not None:
                 session.close()

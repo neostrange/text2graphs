@@ -127,6 +127,8 @@ class GraphBasedNLP(GraphDBBase):
 
             # here doc[0] refers to the text context of doc
             spans = self.__text_processor.process_sentences(doc._.text_id, doc, storeTag, text_id)
+            wsd = self.__text_processor.perform_wsd(doc._.text_id)
+            wn = self.__text_processor.assign_synset_info_to_tokens(doc._.text_id)
             noun_chunks = self.__text_processor.process_noun_chunks(doc, text_id),
             nes = self.__text_processor.process_entities(spans, text_id)
             deduplicate = self.__text_processor.deduplicate_named_entities(text_id)

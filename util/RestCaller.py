@@ -1,7 +1,38 @@
 import requests
 import json
 
+def amuse_wsd_api_call2(api_endpoint, sentence):
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json"
+    }
+    data = {"text": sentence, "lang": "EN"}
+    data_json = "[" + ",".join([f'{{"text": "{item["text"]}", "lang": "{item["lang"]}"}}' for item in data]) + "]"
 
+    try:
+        response = requests.post(api_endpoint, data=data_json, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error while calling AMuSE-WSD API: {e}")
+        return None
+    
+def amuse_wsd_api_call(api_endpoint, sentences):
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    data = [{"text": sentence, "lang": "EN"} for sentence in sentences]
+
+    try:
+        response = requests.post(api_endpoint, json=data, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error while calling AMuSE-WSD API: {e}")
+        return None
+    
 def callHeidelTimeService(parameters):
     dct = parameters.get("dct")
     text = parameters.get("text")
