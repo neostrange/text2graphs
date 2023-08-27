@@ -497,11 +497,11 @@ class RefinementPhase():
                         where f.complementIndex = complementHead.tok_index_doc and not exists 
                         ((complementHead)-[]-(:NamedEntity {headTokenIndex: complementHead.tok_index_doc})) and not exists
                         ((f)-[:REFERS_TO]-(:NamedEntity))
-                        merge (complementHead)-[:PARTICIPATES_IN]->(e:Entity 
-                        {id:f.complementFullText, type:complementHead.pos, syntacticType:complementHead.pos, head:f.complement, 
-                        headTokenIndex:f.complementIndex})
-                        merge (f)-[:REFERS_TO]->(e)
-                        RETURN p    
+                        MERGE (e:Entity {id: f.complementFullText})
+                        ON CREATE SET e.type = complementHead.pos, e.syntacticType = complementHead.pos, e.head = f.complement, e.headTokenIndex = f.complementIndex
+                        MERGE (complementHead)-[:PARTICIPATES_IN]->(e)
+                        MERGE (f)-[:REFERS_TO]->(e)
+                        RETURN p   
         
         """
         data= graph.run(query).data()

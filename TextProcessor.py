@@ -454,12 +454,25 @@ class TextProcessor(object):
         return synonyms
 
     # Function to get domain labels for a synset
-    def get_domain_labels(self, synset):
+    """ def get_domain_labels(self, synset):
         domain_labels = []
         topic_domains = synset.topic_domains()
         for domain in topic_domains:
             domain_labels.extend(domain.split("."))
+        return domain_labels """
+    
+
+    # Function to get domain labels for a synset
+    def get_domain_labels(self, synset):
+        domain_labels = []
+        lexname = synset.lexname()
+
+        # Extract the domain label from the lexical name if present
+        if "." in lexname:
+            domain_labels.append(lexname.split(".")[0])
+
         return domain_labels
+
 
     # Assuming you have a running Neo4j server and a connected driver instance called 'driver'
     def assign_synset_info_to_tokens(self, doc_id):
@@ -509,6 +522,7 @@ class TextProcessor(object):
 
                         # Step 3: Get synset information from WordNet
                         synset = wn.synset_from_pos_and_offset(wn_synset_offset[-1], int(wn_synset_offset[:-1]))
+                        #synset = wn.synset_from_pos_and_offset(wn_synset_offset[-1], int(wn_synset_offset))
 
                         # Get hypernyms, synonyms, and domain labels for the synset
                         hypernyms = self.get_all_hypernyms(synset)
