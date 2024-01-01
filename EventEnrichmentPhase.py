@@ -90,6 +90,77 @@ class EventEnrichmentPhase():
         data= graph.run(query).data()
         
         return ""
+    
+
+
+# custom labels for non-core arguments and storing it as a node attribute: argumentType. The second step the value in the fa.argumentType 
+# will be set as a lable for this node. It will perform event enrichment fucntion as well as attaching propbank modifiers arguments 
+# with the event node. 
+# TODO: Though we have found fa nodes with duplicates content with same label or arg type but we will deal with it later.                 
+
+    def add_non_core_participants_to_event(self):
+ 
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                    MATCH (event:TEvent)<-[:DESCRIBES]-(f:Frame)<-[:PARTICIPANT]-(fa:FrameArgument)
+                    WHERE NOT fa.type IN ['ARG0', 'ARG1', 'ARG2', 'ARG3', 'ARG4', 'ARGM-TMP']
+                    WITH event, f, fa
+                    SET fa.argumentType =
+                        CASE fa.type
+                        WHEN 'ARGM-COM' THEN 'Comitative'
+                        WHEN 'ARGM-LOC' THEN 'Locative'
+                        WHEN 'ARGM-DIR' THEN 'Directional'
+                        WHEN 'ARGM-GOL' THEN 'Goal'
+                        WHEN 'ARGM-MNR' THEN 'Manner'
+                        WHEN 'ARGM-TMP' THEN 'Temporal'
+                        WHEN 'ARGM-EXT' THEN 'Extent'
+                        WHEN 'ARGM-REC' THEN 'Reciprocals'
+                        WHEN 'ARGM-PRD' THEN 'SecondaryPredication'
+                        WHEN 'ARGM-PRP' THEN 'PurposeClauses'
+                        WHEN 'ARGM-CAU' THEN 'CauseClauses'
+                        WHEN 'ARGM-DIS' THEN 'Discourse'
+                        WHEN 'ARGM-MOD' THEN 'Modals'
+                        WHEN 'ARGM-NEG' THEN 'Negation'
+                        WHEN 'ARGM-DSP' THEN 'DirectSpeech'
+                        WHEN 'ARGM-ADV' THEN 'Adverbials'
+                        WHEN 'ARGM-ADJ' THEN 'Adjectival'
+                        WHEN 'ARGM-LVB' THEN 'LightVerb'
+                        WHEN 'ARGM-CXN' THEN 'Construction'
+                        ELSE 'NonCore'
+                        END
+                    MERGE (fa)-[r:PARTICIPANT]->(event)
+                    SET r.type = fa.type,
+                        (CASE WHEN fa.syntacticType IN ['IN'] THEN r END).prep = fa.head 
+                    RETURN event, f, fa, r     
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
+    
+
+
+
+ # 2nd step where we set the labels for the non-core fa arguments are assigned
+
+    def add_label_to_non_core_fa(self):
+ 
+        print(self.uri)
+        graph = Graph(self.uri, auth=(self.username, self.password))
+
+        query = """    
+                   
+                    MATCH (fa:FrameArgument)
+                    WHERE fa.argumentType is not NULL
+                    CALL apoc.create.addLabels(id(fa), [fa.argumentType]) YIELD node
+                    RETURN node     
+        
+        """
+        data= graph.run(query).data()
+        
+        return ""
 
 
 
@@ -98,6 +169,8 @@ if __name__ == '__main__':
 
     tp.link_frameArgument_to_event()
     tp.add_core_participants_to_event()
+    tp.add_non_core_participants_to_event()
+    tp.add_label_to_non_core_fa()
 
 
 

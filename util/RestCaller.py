@@ -68,7 +68,7 @@ def callAllenNlpApi(apiName, string):
 
 ss = """
 
-The biggest U.S. stock market index, the Dow Jones, plunged by more than 416 points by the closing bell on Tuesday, the worst single-day decline since the re-opening of the markets following the September 11th terrorist attacks.
+	LemonDuck's activities were first spotted in China in May 2019, before it began adopting COVID_19_themed lures in email attacks in 2020 and even the recently addressed ""ProxyLogon"" Exchange Server flaws to gain access to unpatched systems.
 """
 res_srl = callAllenNlpApi("semantic-role-labeling", ss)
 #res_srl = callAllenNlpApi("coreference-resolution", ss)

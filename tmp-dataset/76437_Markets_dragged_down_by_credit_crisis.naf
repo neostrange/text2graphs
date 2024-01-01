@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<NAF version="1.0" xml:lang="en">
+  <nafHeader>
+    <fileDesc author="Tom Morris" creationtime="2007-08-10T00:00:00" filename="76437_Markets_dragged_down_by_credit_crisis" filetype="HTML" title="Markets dragged down by credit crisis" />
+    <public publicId="76437" uri="http://en.wikinews.org/wiki/Markets_dragged_down_by_credit_crisis" />
+  </nafHeader>
+  <raw>
+
+"An infamous cross_platform crypto_mining malware has continued to refine and improve upon its techniques to strike both Windows and Linux operating systems by setting its sights on older vulnerabilities, while simultaneously latching on to a variety of spreading mechanisms to maximize the effectiveness of its campaigns. 
+
+""LemonDuck, an actively updated and robust malware that's primarily known for its botnet and cryptocurrency mining objectives, followed the same trajectory when it adopted more sophisticated behavior and escalated its operations,"" Microsoft said in a technical write_up published last week. ""Today, beyond using resources for its traditional bot and mining activities, LemonDuck steals credentials, removes security controls, spreads via emails, moves laterally, and ultimately drops more tools for human_operated activity."" 
+
+The malware is notorious for its ability to propagate rapidly across an infected network to facilitate information theft and turn the machines into cryptocurrency mining bots by diverting their computing resources to illegally mine cryptocurrency. Notably, LemonDuck acts as a loader for follow_on attacks that involve credential theft and the installation of next_stage implants that could act as a gateway to a variety of malicious threats, including ransomware. 
+
+LemonDuck's activities were first spotted in China in May 2019, before it began adopting COVID_19_themed lures in email attacks in 2020 and even the recently addressed ""ProxyLogon"" Exchange Server flaws to gain access to unpatched systems. Another tactic of note is its ability to erase ""other attackers from a compromised device by getting rid of competing malware and preventing any new infections by patching the same vulnerabilities it used to gain access."" 
+
+Attacks incorporating LemonDuck malware have been primarily focused on the manufacturing and IoT sectors, with the U.S, Russia, China, Germany, the U.K., India, Korea, Canada, France, and Vietnam witnessing the most encounters. 
+
+Additionally, Microsoft outed the operations of a second entity that relies on LemonDuck for achieving ""separate goals"", which the company codenamed ""LemonCat."" The attack infrastructure associated with the ""Cat"" variant is said to have emerged in January 2021, ultimately leading to its use in attacks exploiting vulnerabilities targeting Microsoft Exchange Server. Subsequent intrusions taking advantage of the Cat domains resulted in backdoor installation, credential, and data theft, and malware delivery, often a Windows trojan called Ramnit. 
+
+""The fact that the Cat infrastructure is used for more dangerous campaigns does not deprioritize malware infections from the Duck infrastructure,"" Microsoft said. ""Instead, this intelligence adds important context for understanding this threat: the same set of tools, access, and methods can be re_used at dynamic intervals, to greater impact."" 
+
+Update: In a deep dive on the attacker behavior post infection, Microsoft on Thursday disclosed LemonDuck's propagation tactics, counting edge_initiated compromises and bot_driven email campaigns, noting that it banks on fileless malware techniques to make remediation and removal non_trivial. 
+
+""LemonDuck attempts to automatically disable Microsoft Defender for Endpoint real_time monitoring and adds whole disk drives – specifically the C:\ drive – to the Microsoft Defender exclusion list,"" Microsoft 365 Defender Threat Intelligence Team said, mirroring a tactic that was recently disclosed as adopted by a new malware strain dubbed ""MosaicLoader"" to thwart antivirus scanning. 
+
+The attack chain is also said to leverage a wide range of freely available open_source and custom toolsets to facilitate credential theft, lateral movement, privilege escalation, and even erase traces of all other botnets, miners, and competitor malware from the compromised device, while downloading an XMRig miner implant as part of its monetization mechanism. 
+
+
+" 
+
+
+</raw>
+
+
+</NAF>

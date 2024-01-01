@@ -53,69 +53,7 @@ class SemanticRoleLabel:
     # this method is just to accomodate long text documents. the reason is allennlp couldn't deal with such long docs
     # the idea here is to partition the docs into half. each partition contains half number of sentences.
     # The result produced by allennlp is retrieved for both of the partitions and integrated by adding paddings of 'O's 
-    
-    def get_customized_res_srl(self, doc):
 
-        text_segment1 = ""
-        text_segment2 = ""
-
-        num_sent = len(list(doc.sents))
-
-        partition = num_sent/2
-
-        
-        i = 0
-
-        for sent in doc.sents:
-            if (i<partition):
-                text_segment1 = text_segment1 + sent.text
-                i+=1
-            else: 
-                text_segment2 = text_segment2 + sent.text
-                i+=1
-
-
-        if (text_segment2 == ""):
-            return self.srl_doc(doc)
-            
-        
-        res_srl_sent1 = self.callAllenNlpApi("semantic-role-labeling", text_segment1)
-        res_srl_sent2 = self.callAllenNlpApi("semantic-role-labeling", text_segment2)
-
-        length_sent1 = len(list(res_srl_sent1["verbs"][0]["tags"]))
-        length_sent2 = len(list(res_srl_sent2["verbs"][0]["tags"]))
-
-        i1 = 0
-        i2 = 0
-
-        for dict in res_srl_sent1["verbs"]:
-            for jj in range(length_sent2):
-                #list(dict["tags"]).append("O")
-                res_srl_sent1["verbs"][i1]["tags"].append("O")
-            i1+=1
-
-        for dict in res_srl_sent2["verbs"]:
-            for jj in range(length_sent1):
-                #list(dict["tags"]).append("O")
-                res_srl_sent2["verbs"][i2]["tags"].insert(0,"O")
-            #res_srl_sent2["verbs"][i2]["tags"].reverse()    
-            i2+=1
-
-
-
-        print("sent1", res_srl_sent1)
-        print("sent2", res_srl_sent2)
-
-        joint_res_srl_verbs_list = res_srl_sent1["verbs"] + res_srl_sent2["verbs"]
-
-
-        print (joint_res_srl_verbs_list)
-
-        dict_of_list = {"verbs": joint_res_srl_verbs_list}
-
-        print(dict_of_list)
-
-        return dict_of_list
 
 
     def get_sent_wise_res_srl(self, doc):
@@ -128,62 +66,88 @@ class SemanticRoleLabel:
 
         return res_srl_list
 
+    
     def __call__(self, doc):
-        #res_srl = self.srl_doc(ss = doc.text)
         res_srl_list = self.get_sent_wise_res_srl(doc)
 
         senti = -1
-        # for each token in doc
         for sent in doc.sents:
-            senti+=1
+            senti += 1
             temp = sent.text
             res_srl = res_srl_list[senti]
             for tok in sent:
                 if tok.pos_ in ["VERB", "AUX"]:
-                    ii = tok.i  # index of token within the parent document
+                    ii = tok.i
                     try:
-                        #search for the frame that is centered on this verb
-                        # if its the first sentence, so no need to get the difference.
                         if senti == 0:
                             sent_delta = 0
                         else:
-                        # if its some sentence other than first one, get the difference
-                            sent_delta = sent.end
+                            sent_delta = sent.start
 
-
-                        for el in res_srl["verbs"]:
-                            if el["tags"][ii-sent_delta] == "B-V":
-                                frame_verb = el
-
-                        #frame_verb = [el for el in res_srl.get["verbs"] if el["tags"][ii] == "B-V"][0]
-                        dict_args = self.post_process_verbframe(frame_verb) 
-
-                        # add sent.start to each value of index
-                        # updated list dict_el_list
-                        # the idea here is to add the sentence start index to each index of arg value so that it can corresponds to a doc 
-                        # rather than a sentence. 
-                        dict_el_list = list()
-                        updated_dict = {}
-
-                        for arg in dict_args:
-                            
-                            dict_el_list.clear()
-                            
-                            for el_val in dict_args[arg]:
-                                updated_val = el_val + sent.start
-                                dict_el_list.append(updated_val)
-                            
-                            value_list = dict_el_list
-                            updated_dict[arg] = value_list.copy()
-
-
-                        #skip cases of {'V': [8]}  
-                        if len(list(dict_args.keys())) > 1:
-                            #tok._.SRL = dict_args
-                            tok._.SRL = updated_dict
+                        srl_tags = self.extract_srl(res_srl["verbs"], ii - sent_delta, sent.start)
+                        if srl_tags:
+                            tok._.SRL = srl_tags
                     except Exception as e:
                         self.list_exceptions.append("EXCEPTION:" + doc.text + "|||" + tok.text)
         return doc
+
+    def extract_srl(self, verbs, index, sent_start):
+        srl_tags = {}
+        for verb in verbs:
+            if verb["tags"][index] == "B-V":
+                frame_verb = verb
+                tags = frame_verb["tags"]
+                dict_args = {}
+                current_role = None
+
+                for jj in range(len(tags)):
+                    if current_role is None:
+                        if tags[jj] == "O":
+                            pass
+                        else:
+                            if tags[jj][0] == "B":
+                                key = tags[jj][tags[jj].find("-") + 1:]
+                                current_role = {"role": key, "indices": [jj + sent_start]}
+                            else:
+                                raise Exception("Cannot be {} after O".format(tags[jj]))
+                    else:
+                        if tags[jj] == "O":
+                            if current_role["role"] not in dict_args:
+                                dict_args[current_role["role"]] = []
+                            dict_args[current_role["role"]].append(current_role["indices"])
+                            current_role = None
+                        elif tags[jj][0] == "I":
+                            current_role["indices"].append(jj + sent_start)
+                        elif tags[jj][0] == "B":
+                            if current_role["role"] not in dict_args:
+                                dict_args[current_role["role"]] = []
+                            dict_args[current_role["role"]].append(current_role["indices"])
+                            key = tags[jj][tags[jj].find("-") + 1:]
+                            current_role = {"role": key, "indices": [jj + sent_start]}
+
+                if current_role:
+                    if current_role["role"] not in dict_args:
+                        dict_args[current_role["role"]] = []
+                    dict_args[current_role["role"]].append(current_role["indices"])
+
+                for key, value in dict_args.items():
+                    if key in srl_tags:
+                        srl_tags[key].extend(value)
+                    else:
+                        srl_tags[key] = value
+
+        return srl_tags
+
+
+    # Existing code ...
+
+
+
+        
+
+    
+
+
 
     def srl_doc(self, ss):
         res_srl = self.callAllenNlpApi(self.apiName, ss)

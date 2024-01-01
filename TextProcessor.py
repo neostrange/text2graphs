@@ -27,6 +27,11 @@ from util.RestCaller import callAllenNlpApi
 from util.CallAllenNlpCoref import callAllenNlpCoref
 import traceback
 from nltk.corpus import wordnet31 as wn
+from nltk.corpus.reader.wordnet import WordNetError as wn_error
+
+
+
+from functools import reduce  # Import reduce function
 
 
 
@@ -326,104 +331,81 @@ class TextProcessor(object):
         
         return annotatedd_text_docs
 
-    def apply_pipeline_1(self, doc, flag_display = False):
+   
+    
 
-        #graph = Graph("bolt://10.200.37.170:7687", auth=("neo4j", "neo123"))
+    
+    def apply_pipeline_1(self, doc, flag_display=False):
         graph = Graph(self.uri, auth=(self.username, self.password))
-        #doc = nlp(ss)
+        frameDict = {}
 
-        list_pipeline = []
-
-        # for tok in doc:
-        #     list_pipeline.append((tok.i, tok.text, tok.tag_, tok.pos_, tok.dep_, 
-        #                         '\n'.join(textwrap.wrap(json.dumps(tok._.SRL), width = 60))
-        #                         ))
-
-        #a = Node("Frame", text="verb", span="", startIndex="", endIndex="")
-        #b = Node("FrameArgument", type="", text="Bob", span="", startIndex="", endIndex="")
-        
-        frameDict ={}
-
-        v = ""
-        sg = ""
-        tv = ""
-        ta = ""
+        v = None
+        sg = None
+        tv = None
 
         PARTICIPANT = Relationship.type("PARTICIPANT")
         PARTICIPATES_IN = Relationship.type("PARTICIPATES_IN")
 
         for tok in doc:
-            sg=""
-            v="" 
-            frameDict={} 
-            for x,y in tok._.SRL.items():
-                span = doc[y[0]:y[len(y)-1]+1]
+            sg = None
+            v = None
+            frameDict = {}
 
+            for x, indices_list in tok._.SRL.items():
+                for y in indices_list:
+                    span = doc[y[0]: y[len(y) - 1] + 1]
 
-                # now got the span, iterate through span for each token
-                # locate that token in neo4j as the TagOccurrence by id
-                # make connection with the frame or frameargument node.
+                    if x == "V":
+                        v = Node("Frame", text=span.text, startIndex=y[0], endIndex=y[len(y) - 1])
+                        for index in y:
+                            query = "MATCH (x:TagOccurrence {tok_index_doc:" + str(
+                                index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:" + str(
+                                doc._.text_id) + "}) RETURN x"
+                            token_node = graph.evaluate(query)
+                            token_verb_rel = PARTICIPATES_IN(token_node, v)
+                            graph.create(token_verb_rel)
 
+                        tv = v
+                    else:
+                        a = Node("FrameArgument", type=x, text=span.text, startIndex=y[0], endIndex=y[len(y) - 1])
 
-                if x == "V":
-                    # see if the token refers to verb (predicate)
-                    v = Node("Frame", text=span.text, startIndex=y[0], endIndex=y[len(y)-1])
-
-                    for index in y:
-                        query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
-                        token_node= graph.evaluate(query)
-                        token_verb_rel = PARTICIPATES_IN(token_node,v)
-                        # try:
-                        #     token_verb_rel = PARTICIPATES_IN(token_node,v)
-                        # except BaseException as err:
-                        #     print("query: ", query)
-                        #     print(f"Unexpected {err=}, {type(err)=}")  
-                        
-
-                    # debug later 
-                    #frameDict[x] = v;
-                    # save the verb node seperately 
-                    #sg=v
-                    #sg = token_span_rel 
-                    tv = token_verb_rel
-                else:
-                    # find all the respective argument nodes and save it to dictionary
-                    a = Node("FrameArgument", type= x, text=span.text, startIndex=y[0], endIndex=y[len(y)-1])
-
-                    if a is None:
-                        continue
-                    
-                    for index in y:
-                        query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
-                        token_node= graph.evaluate(query) 
-
-                        if token_node is None:
+                        if a is None:
                             continue
-                        token_arg_rel = PARTICIPATES_IN(token_node,a)
 
-                        if ta == "":
-                            ta = token_arg_rel
-                        else:
-                            ta = ta | token_arg_rel
+                        for index in y:
+                            query = "MATCH (x:TagOccurrence {tok_index_doc:" + str(
+                                index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:" + str(
+                                doc._.text_id) + "}) RETURN x"
+                            token_node = graph.evaluate(query)
 
-                    frameDict[x] = a;
-            
-            if tv == "":
-                continue
-            else:
-                sg = tv | ta
+                            if token_node is None:
+                                continue
 
-                for i in frameDict:
-                    if not sg:
-                        break;
-                    r = PARTICIPANT(frameDict[i],v)
-                    sg = sg | r
+                            # Create PARTICIPATES_IN relationship between TagOccurrence and FrameArgument
+                            token_arg_rel = PARTICIPATES_IN(token_node, a)
+                            graph.create(token_arg_rel)
 
+                        if x not in frameDict:
+                            frameDict[x] = []
+                        frameDict[x].append(a)
 
+            if tv is not None:
+                sg = tv
+
+            for i in frameDict:
+                if sg is None:
+                    break
+                for arg_node in frameDict[i]:
+                    # Create PARTICIPANT relationship between FrameArgument and Frame
+                    r = PARTICIPANT(arg_node, sg)
+                    graph.create(r)
+
+            if sg is not None:
                 try:
                     graph.create(sg)
                 except BaseException as err:
-                    print(f"Unexpected {err=}, {type(err)=}") 
+                    print(f"Unexpected {err=}, {type(err)=}")
+
 
             #print(x, ": ",y, span.text)
                         
@@ -508,40 +490,44 @@ class TextProcessor(object):
 
                     if nltk_synset and nltk_synset != 'O':
 
-                        synset = wn.synset(nltk_synset)
-                        synset_identifier = synset.name()
-                        print(synset_identifier)
-                        lemma, pos, sense_num = synset_identifier.split('.')
-                        #print("Lemma:", lemma)
-                        #print("POS:", pos)
-                        #print("Sense Number:", sense_num)
+                        try:
+                            synset = wn.synset(nltk_synset)
+                            synset_identifier = synset.name()
+                            print(synset_identifier)
+                            lemma, pos, sense_num = synset_identifier.split('.')
+                            #print("Lemma:", lemma)
+                            #print("POS:", pos)
+                            #print("Sense Number:", sense_num)
 
-                        wn_synset_offset = synset.offset()
-                        wn_synset_offset = str(wn_synset_offset) + pos
+                            wn_synset_offset = synset.offset()
+                            wn_synset_offset = str(wn_synset_offset) + pos
 
 
-                        # Step 3: Get synset information from WordNet
-                        synset = wn.synset_from_pos_and_offset(wn_synset_offset[-1], int(wn_synset_offset[:-1]))
-                        #synset = wn.synset_from_pos_and_offset(wn_synset_offset[-1], int(wn_synset_offset))
+                            # Step 3: Get synset information from WordNet
+                            synset = wn.synset_from_pos_and_offset(wn_synset_offset[-1], int(wn_synset_offset[:-1]))
+                            #synset = wn.synset_from_pos_and_offset(wn_synset_offset[-1], int(wn_synset_offset))
 
-                        # Get hypernyms, synonyms, and domain labels for the synset
-                        hypernyms = self.get_all_hypernyms(synset)
-                        synonyms = self.get_synonyms(synset)
-                        domain_labels = self.get_domain_labels(synset)
+                            # Get hypernyms, synonyms, and domain labels for the synset
+                            hypernyms = self.get_all_hypernyms(synset)
+                            synonyms = self.get_synonyms(synset)
+                            domain_labels = self.get_domain_labels(synset)
 
-                        # Update the Token node in Neo4j with synset-related information
-                        update_query = """
-                        MATCH (t:TagOccurrence {id: $token_id})
-                        SET t.hypernyms = $hypernyms, t.wn31SynsetOffset = $wn31SynsetOffset, t.synonyms = $synonyms, t.domain_labels = $domain_labels
-                        """
-                        params = {
-                            "token_id": token_id,
-                            "hypernyms": hypernyms,
-                            "synonyms": synonyms,
-                            "domain_labels": domain_labels,
-                            "wn31SynsetOffset": wn_synset_offset
-                        }
-                        self.execute_query3(update_query, params)  # Call your existing execute_query method
+                            # Update the Token node in Neo4j with synset-related information
+                            update_query = """
+                            MATCH (t:TagOccurrence {id: $token_id})
+                            SET t.hypernyms = $hypernyms, t.wn31SynsetOffset = $wn31SynsetOffset, t.synonyms = $synonyms, t.domain_labels = $domain_labels
+                            """
+                            params = {
+                                "token_id": token_id,
+                                "hypernyms": hypernyms,
+                                "synonyms": synonyms,
+                                "domain_labels": domain_labels,
+                                "wn31SynsetOffset": wn_synset_offset
+                            }
+                            self.execute_query3(update_query, params)  # Call your existing execute_query method
+                        except wn_error:
+                            print(f"Synset not found for token_id: {token_id}. Skipping processing.")
+
                     else:
                         print(f"Synset offset 'O' or empty for token_id: {token_id}. Skipping processing.")
 

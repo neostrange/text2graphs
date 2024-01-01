@@ -247,9 +247,23 @@ class RefinementPhase():
         print(self.uri)
         graph = Graph(self.uri, auth=(self.username, self.password))
 
+        # query = """    
+        #                 match p= (a:TagOccurrence where a.pos in ['NNS', 'NN', 'NNP', 'NNPS','PRP', 'PRP$', 'RB'])--
+        #                 (c:FrameArgument {type:'ARGM-TMP'})
+        #                 where not exists ((a)<-[:IS_DEPENDENT]-()--(c)) and not exists ((a)-[:IS_DEPENDENT]->()--(c))
+        #                 WITH c, a, p
+        #                 set c.head = a.text, c.headTokenIndex = a.tok_index_doc,
+        #                 (case when a.pos in ['NNS', 'NN'] then c END).syntacticType ='NOMINAL' , 
+        #                 (case when a.pos in ['NNP', 'NNPS'] then c END).syntacticType ='NAM', 
+        #                 (case when a.pos in ['PRP', 'PRP$'] then c END).syntacticType ='PRO',
+        #                 (case when a.pos in ['RB'] then c END).syntacticType ='ADV'
+        #                 return p    
+        
+        # """
+
         query = """    
                         match p= (a:TagOccurrence where a.pos in ['NNS', 'NN', 'NNP', 'NNPS','PRP', 'PRP$', 'RB'])--
-                        (c:FrameArgument {type:'ARGM-TMP'})
+                        (c:FrameArgument)
                         where not exists ((a)<-[:IS_DEPENDENT]-()--(c)) and not exists ((a)-[:IS_DEPENDENT]->()--(c))
                         WITH c, a, p
                         set c.head = a.text, c.headTokenIndex = a.tok_index_doc,
@@ -764,7 +778,7 @@ if __name__ == '__main__':
 
 
     tp.link_antecedent_to_namedEntity()
-    tp.detect_correct_NEL_result_for_having_kb_id()
+    #tp.detect_correct_NEL_result_for_having_kb_id()
     tp.detect_correct_NEL_result_for_missing_kb_id()
 
     tp.link_frameArgument_to_namedEntity_for_nam_nom()
@@ -779,6 +793,79 @@ if __name__ == '__main__':
     tp.detect_quantified_entities_from_frameArgument()
     tp.link_frameArgument_to_numeric_entities()
     tp.link_frameArgument_to_entity_via_named_entity()
+
+
+
+
+
+
+# custom labels for non-core arguments and storing it as a node attribute: argumentType. The second step the value in the fa.argumentType 
+# will be set as a lable for this node. It will perform event enrichment fucntion as well as attaching propbank modifiers arguments 
+# with the event node. 
+# TODO: Though we have found fa nodes with duplicates content with same label or arg type but we will deal with it later. 
+# 
+# 
+# MATCH (event:TEvent)<-[:DESCRIBES]-(f:Frame)<-[:PARTICIPANT]-(fa:FrameArgument)
+# WHERE not fa.type IN ['ARG0', 'ARG1', 'ARG2', 'ARG3', 'ARG4', 'ARGM-TMP']
+# WITH event, f, fa
+# SET fa.argumentType=
+#     CASE fa.type
+#     WHEN 'ARGM-MNR' THEN 'Manner'
+#     WHEN 'ARGM-ADV' THEN 'Adverbial'
+#     WHEN 'ARGM-DIR' THEN 'Direction'
+#     WHEN 'ARGM-DIS' THEN 'Discourse'
+#     WHEN 'ARGM-LOC' THEN 'Location'
+#     WHEN 'ARGM-PRP' THEN 'Purpose'
+#     WHEN 'ARGM-CAU' THEN 'Cause'
+#     WHEN 'ARGM-EXT' THEN 'Extent'
+#     ELSE 'NonCore'
+#     END
+# MERGE (fa)-[r:PARTICIPANT]->(event)
+# SET r.type = fa.type,
+#     (CASE WHEN fa.syntacticType IN ['IN'] THEN r END).prep = fa.head 
+# RETURN event, f, fa, r
+
+
+
+
+#VERSION 2 of the previous query with additiona propbank arguments
+# MATCH (event:TEvent)<-[:DESCRIBES]-(f:Frame)<-[:PARTICIPANT]-(fa:FrameArgument)
+# WHERE NOT fa.type IN ['ARG0', 'ARG1', 'ARG2', 'ARG3', 'ARG4', 'ARGM-TMP']
+# WITH event, f, fa
+# SET fa.argumentType =
+#     CASE fa.type
+#     WHEN 'ARGM-COM' THEN 'Comitative'
+#     WHEN 'ARGM-LOC' THEN 'Locative'
+#     WHEN 'ARGM-DIR' THEN 'Directional'
+#     WHEN 'ARGM-GOL' THEN 'Goal'
+#     WHEN 'ARGM-MNR' THEN 'Manner'
+#     WHEN 'ARGM-TMP' THEN 'Temporal'
+#     WHEN 'ARGM-EXT' THEN 'Extent'
+#     WHEN 'ARGM-REC' THEN 'Reciprocals'
+#     WHEN 'ARGM-PRD' THEN 'SecondaryPredication'
+#     WHEN 'ARGM-PRP' THEN 'PurposeClauses'
+#     WHEN 'ARGM-CAU' THEN 'CauseClauses'
+#     WHEN 'ARGM-DIS' THEN 'Discourse'
+#     WHEN 'ARGM-MOD' THEN 'Modals'
+#     WHEN 'ARGM-NEG' THEN 'Negation'
+#     WHEN 'ARGM-DSP' THEN 'DirectSpeech'
+#     WHEN 'ARGM-ADV' THEN 'Adverbials'
+#     WHEN 'ARGM-ADJ' THEN 'Adjectival'
+#     WHEN 'ARGM-LVB' THEN 'LightVerb'
+#     WHEN 'ARGM-CXN' THEN 'Construction'
+#     ELSE 'NonCore'
+#     END
+# MERGE (fa)-[r:PARTICIPANT]->(event)
+# SET r.type = fa.type,
+#     (CASE WHEN fa.syntacticType IN ['IN'] THEN r END).prep = fa.head 
+# RETURN event, f, fa, r
+
+
+# 2nd step where we set the labels for the non-core fa arguments
+# MATCH (fa:FrameArgument)
+# WHERE fa.argumentType is not NULL
+# CALL apoc.create.addLabels(id(fa), [fa.argumentType]) YIELD node
+# RETURN node
 
 
 
