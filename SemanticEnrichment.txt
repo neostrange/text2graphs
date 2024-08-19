@@ -1,0 +1,180 @@
+// Define your patterns
+WITH [
+    {label: "FinancialActivity", pattern: ["Markets", "Global stock markets"]},
+    {label: "EconomicSituation", pattern: ["Credit crisis", "Mass sell-off", "Sub-prime mortgage crisis"]},
+    {label: "Date", pattern: ["August 10, 2007"]},
+    {label: "GeographicRegion", pattern: ["United States"]},
+    {label: "FinancialIndicator", pattern: ["Dow Jones Industrial Average", "UK's FTSE-100 index", "Japan's Nikkei 225"]}
+] AS patterns
+
+// Iterate through each pattern
+UNWIND patterns AS pattern
+
+// Match nodes of type Entity
+MATCH (e:Entity)
+
+// Check if the 'id' attribute contains any of the patterns (case-insensitive)
+WHERE ANY(p IN pattern.pattern WHERE toLower(e.id) CONTAINS toLower(p) OR REPLACE(toLower(e.id), '_', ' ') CONTAINS toLower(p))
+
+// Set the corresponding label based on the pattern
+SET e:DomainSpecificLabel
+SET e.label = pattern.label
+
+
+-------updated pattern -------------------
+WITH [
+    {label: "FinancialActivity", pattern: ["Markets", "Global stock markets"]},
+    {label: "EconomicSituation", pattern: ["Credit crisis", "Mass sell-off", "Sub-prime mortgage crisis"]},
+    {label: "Date", pattern: ["August 10, 2007"]},
+    {label: "GeographicRegion", pattern: ["United States"]},
+    {label: "FinancialIndicator", pattern: ["Dow Jones Industrial Average", "FTSE-100 index", "FTSE-100", "Nikkei 225", "UK's FTSE-100 index", "Japan's Nikkei 225"]}
+] AS patterns
+
+-----------------------------patterns updated on 76437----------------
+
+
+// Define your patterns
+WITH [
+    {label: "FinancialActivity", pattern: ["Markets", "Global stock markets", "Central banks", "stockholder worries", "bail-out", "withdrawals", "investment funds", "tirade", "lower rates"]},
+    {label: "EconomicSituation", pattern: ["Credit crisis", "Mass sell-off", "Sub-prime mortgage crisis", "insolvent", "volatility", "bankruptcy", "bad mortgages", "crippled", "sub-prime exposure"]},
+    {label: "Date", pattern: ["August 10, 2007", "Friday", "this week"]},
+    {label: "GeographicRegion", pattern: ["United States", "Europe", "Germany", "Japan", "France"]},
+    {label: "FinancialIndicator", pattern: ["Dow Jones Industrial Average", "FTSE-100 index", "FTSE-100", "Nikkei 225", "U.S. Federal Reserve", "European Central Bank", "Fed", "federal funds rate", "interest rates", "share value"]},
+    {label: "FinancialEntity", pattern: ["Bear Stearns", "Washington Mutual", "Countrywide Financial", "American Home Mortgage Investment Corp", "Deutsche Bank", "BNP Paribas SA"]},
+    {label: "Person", pattern: ["Jim Cramer"]},
+    {label: "TVNetwork", pattern: ["CNBC"]},
+    {label: "TVShow", pattern: ["Mad Money", "Street Signs"]}
+] AS patterns
+
+
+// Iterate through each pattern
+UNWIND patterns AS pattern
+
+// Match nodes of type Entity
+MATCH (e:Entity)
+
+// Check if the 'id' attribute contains any of the patterns (case-insensitive)
+WHERE ANY(p IN pattern.pattern WHERE toLower(e.id) CONTAINS toLower(p) OR REPLACE(toLower(e.id), '_', ' ') CONTAINS toLower(p))
+
+// Set the corresponding label based on the pattern
+SET e:DomainSpecificLabel
+SET e.label = pattern.label
+----------------------------------------------------------------------------------------------------------------
+
+---------------------------------------updated one on 76437-----------------------------------------------------
+WITH [
+    {label: "FinancialActivity", patterns: ["Markets", "Global stock markets", "Central banks", "stockholder worries", "bail-out", "withdrawals", "investment funds", "tirade", "lower rates"]},
+    {label: "EconomicSituation", patterns: ["Credit crisis", "Mass sell-off", "Sub-prime mortgage crisis", "subprime mortgage crisis", "insolvent", "volatility", "bankruptcy", "bad mortgages", "american home mortgage", "crippled", "sub-prime exposure"]},
+    {label: "Date", patterns: ["August 10, 2007", "Friday", "this week"]},
+    {label: "GeographicRegion", patterns: ["United States", "Europe", "Germany", "Japan", "France", "Asia"]},
+    {label: "FinancialIndicator", patterns: ["Dow Jones Industrial Average", "FTSE-100 index", "FTSE-100", "Nikkei 225", "federal funds rate", "interest rates", "share value"]},
+    {label: "FinancialEntity", patterns: ["Bear Stearns", "hedge funds", "bank of america home loans", "Washington Mutual", "Countrywide Financial", "American Home Mortgage Investment Corp", "Deutsche Bank", "BNP Paribas SA","BNP Paribas", "european central bank", "Federal Reserve"]},
+    {label: "Person", patterns: ["Jim Cramer"]},
+    {label: "TVNetwork", patterns: ["CNBC"]},
+    {label: "TVShow", patterns: ["Mad Money", "Street Signs"]}
+] AS patterns
+
+UNWIND patterns AS pattern
+
+MATCH (e:Entity)
+WHERE ANY(p IN pattern.patterns 
+          WHERE toLower(e.id) =~ toLower("(?i)\\b(" + REPLACE(p, ' ', '_') + "|" + p + ")\\b") 
+            AND NOT p IN ["a", "an", "the"])
+
+SET e:DomainSpecificLabel
+SET e.label = pattern.label
+
+----------------------------------------------------------------------------------------------------------------
+-------------------------------------------------updated version of the query with market as head to be counted as FinancialActivity-----------------------
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------
+TODO: during the entity identification phase, some exceptions need to be added in the form of rules such as U.S. 
+for United States and for The U.S. and The United States. 
+
+
+------------------------------UPDATED version [tested and verfied]--------------------------------------------------
+// Define the mappings of labels to their corresponding entities
+WITH {
+    Mortgage: ["Adjustable-rate_mortgage"],
+    FinancialInstitution: ["American_Home_Mortgage", "BNP_Paribas", "Bank_of_America_Home_Loans", "Bear_Stearns", "Deutsche_Bank", "Hedge_fund", "Washington_Mutual", "American Home Mortgage Investment Corp", "the Bank of Japan"],
+    GeographicRegion: ["Asia", "Economy_of_Japan", "France", "Germany", "United_Kingdom", "United_States", "U.S.", "European"],
+    Media: ["CNBC"],    
+    CorporateEvent: ["Bankruptcy_of_Lehman_Brothers"],
+    FinancialIndicator: ["Dow_Jones_Industrial_Average"],
+    RegulatoryBody: ["European_Central_Bank", "Federal_Reserve", "Central banks across the world", "the government"],
+    InterestRate: ["Federal_funds_rate", "interest rates", "its target rate of 5.25%", "rates"],
+    Person: ["Jim_Cramer"],
+    TVProgram: ["Mad_Money", "Street_Signs_(TV_program)"],
+    FinancialAspect: ["Market_liquidity", "a drop in liquidity", "a greater proportion of mortgage"],
+    FinancialInstrument: ["Mortgage-backed_security", "Repurchase_agreement", "shares"],
+    Loan: ["Interest-only_loan", "Mortgage_loan", "loans"],
+    MarketIndex: ["Nikkei_225", "The UK's FTSE-100 index"],
+    Lending: ["Subprime_lending"],
+    EconomicCrisis: ["Subprime_mortgage_crisis", "credit crisis", "the massive sub-prime mortgage failure"],
+    MarketParticipant: ["investors"],
+    MarketIndicator: ["232.90 points", "406.51 points", "more than 250 points"],
+    FinancialRescue: ["a bail-out", "a record €83.6 billion addition to its banks"],
+    MarketMovement: ["a mass sell-off"],
+    EconomicAspect: ["a quagmire from millions of people who are unable to repay loans after taking adjustable rate mortgages, teaser rates, interest-only mortgages, or piggyback rates", "as many as seven million people"],
+    RealEstateMarket: ["The U.S. housing market", "their homes"],
+    TimePeriod: ["The volatile week"],
+    FinancialSystem: ["Japan's financial system"],
+    FinancialEvent: ["withdrawals from three large investment funds which were crippled by sub-prime exposure"],
+    Market: ["Global stock markets", "Markets"]
+} AS labelEntities
+
+
+// Iterate through each label-entity pair and add the labels
+UNWIND keys(labelEntities) AS label
+unwind labelEntities[label] as entity
+match (ent:Entity {id:entity}) set ent.domainType = label
+//FOREACH (entity IN labelEntities[label] | 
+  
+//)
+
+-------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------updated version with more label types-------------------------------------------------
+WITH{
+    Mortgage: ["Adjustable-rate_mortgage"],
+    FinancialInstitution: ["American_Home_Mortgage", "BNP_Paribas", "Bank_of_America_Home_Loans", "Bear_Stearns", "Deutsche_Bank", "Hedge_fund", "Washington_Mutual", "American Home Mortgage Investment Corp", "the Bank of Japan"],
+    GeographicRegion: ["Asia", "Economy_of_Japan", "France", "Germany", "United_Kingdom", "United_States", "U.S.", "European"],
+    Media: ["CNBC"],    
+    CorporateEvent: ["Bankruptcy_of_Lehman_Brothers"],
+    FinancialIndicator: ["Dow_Jones_Industrial_Average"],
+    RegulatoryBody: ["European_Central_Bank", "Federal_Reserve", "Central banks across the world", "the government"],
+    InterestRate: ["Federal_funds_rate", "interest rates", "its target rate of 5.25%", "rates"],
+    Person: ["Jim_Cramer"],
+    TVProgram: ["Mad_Money", "Street_Signs_(TV_program)"],
+    FinancialAspect: ["Market_liquidity", "a drop in liquidity", "a greater proportion of mortgage"],
+    FinancialInstrument: ["Mortgage-backed_security", "Repurchase_agreement", "shares"],
+    Loan: ["Interest-only_loan", "Mortgage_loan", "loans"],
+    MarketIndex: ["Nikkei_225", "The UK's FTSE-100 index"],
+    Lending: ["Subprime_lending"],
+    EconomicCrisis: ["Subprime_mortgage_crisis", "credit crisis", "the massive sub-prime mortgage failure"],
+    MarketParticipant: ["investors"],
+    MarketIndicator: ["232.90 points", "406.51 points", "more than 250 points"],
+    FinancialRescue: ["a bail-out", "a record €83.6 billion addition to its banks"],
+    MarketMovement: ["a mass sell-off"],
+    EconomicAspect: ["a quagmire from millions of people who are unable to repay loans after taking adjustable rate mortgages, teaser rates, interest-only mortgages, or piggyback rates", "as many as seven million people"],
+    RealEstateMarket: ["The U.S. housing market", "their homes"],
+    TimePeriod: ["The volatile week"],
+    FinancialSystem: ["Japan's financial system"],
+    FinancialEvent: ["withdrawals from three large investment funds which were crippled by sub-prime exposure"],
+    Market: ["Global stock markets", "Markets"]
+} AS labelEntities 
+
+
+// Iterate through each label-entity pair and add the labels
+UNWIND keys(labelEntities) AS label
+unwind labelEntities[label] as entity
+match (ent:Entity {id:entity}) set ent.domainType = label
+
+
+
+
+---------------------------*************JIm CRAmer Affiliation relation with Mad Money**************-------------------
+match g= (p:Person)-[r1*2]-(:Antecedent)-[]-(:TagOccurrence {upos:'PROPN'})-[:IS_DEPENDENT {type: 'prep' }]-(:TagOccurrence {text:'of'})-[:IS_DEPENDENT {type:'pobj'}]-(e:TagOccurrence)-[:PARTICIPATES_IN]-(ne:NamedEntity )-[:REFERS_TO]-(entity:Entity)
+where ne.headTokenIndex = e.tok_index_doc
+merge (p)-[:AFFILIATION]-(entity)
+return ne

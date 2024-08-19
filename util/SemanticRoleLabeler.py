@@ -12,6 +12,7 @@ from spacy.tokens import Doc, Token, Span
 from spacy.language import Language
 import textwrap
 from transformers import logging
+import re
 
 #from gpml.util.RestCaller import callAllenNlpApi
 
@@ -59,12 +60,34 @@ class SemanticRoleLabel:
     def get_sent_wise_res_srl(self, doc):
 
         res_srl_list = list()
+        sentences = list()
 
-        for sent in doc.sents:
-            res_srl_sent = self.callAllenNlpApi("semantic-role-labeling", sent.text)
+        for s in doc.sents:
+            sentences.append(s.text)
+
+    
+        # Apply replace_hyphens to each sentence in the collection
+        # NOTE: its just a workaround for AMUSE-WSD as it does not consider hyphens for multiwords expressions
+        updated_sentences = [self.replace_hyphens_to_underscores(sentence) for sentence in sentences]
+
+        for sent in updated_sentences:
+            res_srl_sent = self.callAllenNlpApi("semantic-role-labeling", sent)
             res_srl_list.append(res_srl_sent)
 
         return res_srl_list
+
+
+
+    def replace_hyphens_to_underscores(self, sentence):
+        # Define a regular expression pattern to match hyphens used as infixes
+        pattern = re.compile(r'(?<=\w)-(?=\w)')
+
+        # Replace hyphens with underscores
+        replaced_sentence = re.sub(pattern, '_', sentence)
+
+        return replaced_sentence
+
+
 
     
     def __call__(self, doc):
@@ -143,12 +166,6 @@ class SemanticRoleLabel:
 
 
 
-        
-
-    
-
-
-
     def srl_doc(self, ss):
         res_srl = self.callAllenNlpApi(self.apiName, ss)
         #res_srl.replace('"',"'")
@@ -189,11 +206,25 @@ class SemanticRoleLabel:
         return dict_args
 
     def callAllenNlpApi(self, apiName, string):
-        URL = "https://demo.allennlp.org/api/"+apiName+"/predict"
+
+        #URL = "http://localhost:8080/api/"+apiName+"/predict"
+        URL = "http://localhost:8000/predict"
+        
+        payload = ""
+        
+        if apiName == 'semantic-role-labeling':
+
+            # for testing Allennlp for Semantic Role Labeling
+            payload = {"sentence":string}
+        else:
+            # for testing Allennlp for coreferencing
+            payload = {"document":string}
+        
+        
 
         PARAMS = {"Content-Type": "application/json"}
 
-        payload = {"sentence":string}
+        #payload = {"sentence":string}
         
         r = requests.post(URL, headers=PARAMS, data=json.dumps(payload))
 

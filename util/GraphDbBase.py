@@ -7,7 +7,7 @@ import getopt
 help_message = '-u <neo4j username> -p <password> -s <source directory> -b <bolt uri>'
 
 neo4j_user = 'neo4j'
-neo4j_password = 'neo123'
+neo4j_password = 'password'
 source_dataset_path = ''
 uri = 'bolt://localhost:7687'
 

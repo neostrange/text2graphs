@@ -416,6 +416,30 @@ class RefinementPhase():
         
         return ""
 
+#To find head info for the FrameArgument i.e., with multi token as head
+    #// It shows when an action took place
+    # // case: when headword in an FA is a preposition connected with verb gerund (complement) via pcomp dep-parse relation.  
+    #// COMMON OBSERVATIONS:
+    #// - FA has some VERB denoting that its refering to some event
+    #// - FA has some signal that we could relate to some type of Link
+    def get_and_assign_head_info_to_eventive_frameArgument_multitoken_pcomp(self):
+
+            print(self.uri)
+            graph = Graph(self.uri, auth=(self.username, self.password))
+            
+            query = """    
+                            match p= (f)--(v:TagOccurrence {pos: 'VBG'})<-[l:IS_DEPENDENT {type: 'pcomp'}]-
+                            (a:TagOccurrence where a.pos in ['IN'])-[:PARTICIPATES_IN]->(f:FrameArgument)
+                            where not exists ((a)<-[:IS_DEPENDENT]-()--(f))
+                            WITH f, a, p, v
+                            set f.head = a.text, f.headTokenIndex = a.tok_index_doc, f.syntacticType ='EVENTIVE', f.signal = a.text, f.complement = v.text
+                            return p    
+            
+            """
+            data= graph.run(query).data()
+            
+            return ""
+
     
     #To find head info for the FrameArgument which has type of ARGM-TMP i.e., with multi token as head
     #// CASE: has root as a verb. But this verb is acting like a preposition as it has POBJ link with an object. 
@@ -774,6 +798,7 @@ if __name__ == '__main__':
     tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_mark()
     tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_pcomp()
     tp.get_and_assign_head_info_to_temporal_frameArgument_multitoken_pobj()
+    tp.get_and_assign_head_info_to_eventive_frameArgument_multitoken_pcomp()
     
 
 
@@ -800,7 +825,7 @@ if __name__ == '__main__':
 
 
 # custom labels for non-core arguments and storing it as a node attribute: argumentType. The second step the value in the fa.argumentType 
-# will be set as a lable for this node. It will perform event enrichment fucntion as well as attaching propbank modifiers arguments 
+# will be set as a label for this node. It will perform event enrichment fucntion as well as attaching propbank modifiers arguments 
 # with the event node. 
 # TODO: Though we have found fa nodes with duplicates content with same label or arg type but we will deal with it later. 
 # 
@@ -828,7 +853,7 @@ if __name__ == '__main__':
 
 
 
-#VERSION 2 of the previous query with additiona propbank arguments
+#VERSION 2 of the previous query with additional propbank arguments
 # MATCH (event:TEvent)<-[:DESCRIBES]-(f:Frame)<-[:PARTICIPANT]-(fa:FrameArgument)
 # WHERE NOT fa.type IN ['ARG0', 'ARG1', 'ARG2', 'ARG3', 'ARG4', 'ARGM-TMP']
 # WITH event, f, fa

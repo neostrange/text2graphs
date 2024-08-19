@@ -12,6 +12,9 @@ import TextProcessor
 from util.GraphDbBase import GraphDBBase
 from TextProcessor import TextProcessor
 import xml.etree.ElementTree as ET
+from spacy.lang.char_classes import ALPHA, ALPHA_LOWER, ALPHA_UPPER
+from spacy.lang.char_classes import CONCAT_QUOTES, LIST_ELLIPSES, LIST_ICONS
+from spacy.util import compile_infix_regex
 
 
 
@@ -36,6 +39,180 @@ class GraphBasedNLP(GraphDBBase):
         spacy.prefer_gpu()
 
         self.nlp = spacy.load('en_core_web_trf')
+
+        #-----------------------alter tokenization behavior for hyphens when used as infix------------
+
+        # Modify tokenizer infix patterns
+        infixes = (
+            LIST_ELLIPSES 
+            + LIST_ICONS
+            + [
+                r"(?<=[0-9])[+\\-\\*^](?=[0-9-])",
+                r"(?<=[{al}{q}])\\.(?=[{au}{q}])".format(
+                    al=ALPHA_LOWER, au=ALPHA_UPPER, q=CONCAT_QUOTES
+                ),
+                r"(?<=[{a}]),(?=[{a}])".format(a=ALPHA),
+                # ✅ Commented out regex that splits on hyphens between letters:
+                # r"(?<=[{a}])(?:{h})(?=[{a}])".format(a=ALPHA, h=HYPHENS),
+                r"(?<=[{a}0-9])[:<>=/](?=[{a}])".format(a=ALPHA),
+            ]
+        )
+
+        infix_re = compile_infix_regex(infixes)
+        self.nlp.tokenizer.infix_finditer = infix_re.finditer
+        #---------------------------------------------------------------------------------------------
+
+        #----------------------------------------stock market related patterns----------------------------------
+        #ruler = self.nlp.add_pipe("entity_ruler", after='ner')
+        patterns = [
+        {"label": "FinancialActivity", "pattern": "stock trading"},
+        {"label": "FinancialActivity", "pattern": "investment"},
+        {"label": "FinancialActivity", "pattern": "portfolio management"},
+        {"label": "FinancialActivity", "pattern": "asset allocation"},
+        {"label": "FinancialActivity", "pattern": "capital allocation"},
+        {"label": "FinancialActivity", "pattern": "trading strategy"},
+        {"label": "FinancialActivity", "pattern": "equity investment"},
+        {"label": "FinancialActivity", "pattern": "bonds"},
+        {"label": "FinancialActivity", "pattern": "derivatives trading"},
+        {"label": "FinancialActivity", "pattern": "forex trading"},
+        {"label": "FinancialActivity", "pattern": "asset management"},
+        {"label": "FinancialActivity", "pattern": "share trading"},
+        {"label": "FinancialActivity", "pattern": "investment strategy"},
+        {"label": "FinancialActivity", "pattern": "wealth management"},
+        {"label": "FinancialActivity", "pattern": "commodities trading"},
+        {"label": "FinancialActivity", "pattern": "futures contracts"},
+        {"label": "FinancialActivity", "pattern": "securities trading"},
+        {"label": "FinancialActivity", "pattern": "algorithmic trading"},
+        {"label": "FinancialActivity", "pattern": "high-frequency trading"},
+        {"label": "FinancialActivity", "pattern": "options trading"},
+        {"label": "FinancialActivity", "pattern": "risk management"},
+        {"label": "FinancialIndicator", "pattern": "stock price"},
+        {"label": "FinancialIndicator", "pattern": "market index"},
+        {"label": "FinancialIndicator", "pattern": "interest rate"},
+        {"label": "FinancialIndicator", "pattern": "dividend yield"},
+        {"label": "FinancialIndicator", "pattern": "bond yield"},
+        {"label": "FinancialIndicator", "pattern": "volatility index"},
+        {"label": "FinancialIndicator", "pattern": "price-to-earnings ratio"},
+        {"label": "FinancialIndicator", "pattern": "consumer price index"},
+        {"label": "FinancialIndicator", "pattern": "gross domestic product (gdp)"},
+        {"label": "FinancialIndicator", "pattern": "unemployment rate"},
+        {"label": "FinancialIndicator", "pattern": "stock market index"},
+        {"label": "FinancialIndicator", "pattern": "bond rating"},
+        {"label": "FinancialIndicator", "pattern": "inflation rate"},
+        {"label": "FinancialIndicator", "pattern": "exchange rate"},
+        {"label": "FinancialIndicator", "pattern": "treasury yield"},
+        {"label": "FinancialIndicator", "pattern": "credit spread"},
+        {"label": "FinancialIndicator", "pattern": "mortgage rate"},
+        {"label": "FinancialIndicator", "pattern": "yield curve"},
+        {"label": "FinancialIndicator", "pattern": "commodity price index"},
+        {"label": "FinancialIndicator", "pattern": "leading economic index"},
+        {"label": "FinancialIndicator", "pattern": "retail sales index"},
+        {"label": "EconomicActivity", "pattern": "trade relations"},
+        {"label": "EconomicActivity", "pattern": "gdp growth"},
+        {"label": "EconomicActivity", "pattern": "consumer spending"},
+        {"label": "EconomicActivity", "pattern": "industrial production"},
+        {"label": "EconomicActivity", "pattern": "business investment"},
+        {"label": "EconomicActivity", "pattern": "foreign direct investment"},
+        {"label": "EconomicActivity", "pattern": "trade deficit"},
+        {"label": "EconomicActivity", "pattern": "trade surplus"},
+        {"label": "EconomicActivity", "pattern": "economic development"},
+        {"label": "EconomicActivity", "pattern": "employment rate"},
+        {"label": "EconomicActivity", "pattern": "housing starts"},
+        {"label": "EconomicActivity", "pattern": "business sentiment"},
+        {"label": "EconomicActivity", "pattern": "consumer confidence"},
+        {"label": "EconomicActivity", "pattern": "retail sales"},
+        {"label": "EconomicActivity", "pattern": "business investment"},
+        {"label": "EconomicActivity", "pattern": "factory orders"},
+        {"label": "EconomicActivity", "pattern": "trade balance"},
+        {"label": "EconomicActivity", "pattern": "export-import volume"},
+        {"label": "EconomicActivity", "pattern": "manufacturing pmi"},
+        {"label": "EconomicPolicy", "pattern": "monetary policy"},
+        {"label": "EconomicPolicy", "pattern": "fiscal policy"},
+        {"label": "EconomicPolicy", "pattern": "interest rate policy"},
+        {"label": "EconomicPolicy", "pattern": "tax policy"},
+        {"label": "EconomicPolicy", "pattern": "budgetary policy"},
+        {"label": "EconomicPolicy", "pattern": "regulatory policy"},
+        {"label": "EconomicPolicy", "pattern": "economic stimulus"},
+        {"label": "EconomicPolicy", "pattern": "inflation targeting"},
+        {"label": "EconomicPolicy", "pattern": "interest rate decision"},
+        {"label": "EconomicPolicy", "pattern": "quantitative easing"},
+        {"label": "EconomicPolicy", "pattern": "fiscal stimulus"},
+        {"label": "EconomicPolicy", "pattern": "central bank intervention"},
+        {"label": "EconomicPolicy", "pattern": "austerity measures"},
+        {"label": "EconomicPolicy", "pattern": "tax reform"},
+        {"label": "EconomicPolicy", "pattern": "tariff policy"},
+        {"label": "EconomicPolicy", "pattern": "trade agreement"},
+        {"label": "EconomicPolicy", "pattern": "regulatory reform"},
+        {"label": "EconomicPolicy", "pattern": "budget deficit reduction"},
+        {"label": "EconomicSituation", "pattern": "recession"},
+        {"label": "EconomicSituation", "pattern": "inflation"},
+        {"label": "EconomicSituation", "pattern": "deflation"},
+        {"label": "EconomicSituation", "pattern": "market volatility"},
+        {"label": "EconomicSituation", "pattern": "economic downturn"},
+        {"label": "EconomicSituation", "pattern": "economic recovery"},
+        {"label": "EconomicSituation", "pattern": "stagflation"},
+        {"label": "EconomicSituation", "pattern": "hyperinflation"},
+        {"label": "EconomicSituation", "pattern": "economic stability"},
+        {"label": "EconomicSituation", "pattern": "economic indicators"},
+        {"label": "EconomicSituation", "pattern": "economic recession"},
+        {"label": "EconomicSituation", "pattern": "economic recovery"},
+        {"label": "EconomicSituation", "pattern": "economic slowdown"},
+        {"label": "EconomicSituation", "pattern": "boom-bust cycle"},
+        {"label": "EconomicSituation", "pattern": "deflationary pressures"},
+        {"label": "EconomicSituation", "pattern": "economic expansion"},
+        {"label": "EconomicSituation", "pattern": "economic stagnation"},
+        {"label": "EconomicSituation", "pattern": "economic resilience"},
+        {"label": "EconomicSituation", "pattern": "fiscal imbalance"},
+        {"label": "EconomicSituation", "pattern": "debt crisis"},
+        {"label": "EconomicEntity", "pattern": "financial institution"},
+        {"label": "EconomicEntity", "pattern": "multinational corporation"},
+        {"label": "EconomicEntity", "pattern": "investment bank"},
+        {"label": "EconomicEntity", "pattern": "commercial bank"},
+        {"label": "EconomicEntity", "pattern": "hedge fund"},
+        {"label": "EconomicEntity", "pattern": "sovereign wealth fund"},
+        {"label": "EconomicEntity", "pattern": "credit rating agency"},
+        {"label": "EconomicEntity", "pattern": "central bank"},
+        {"label": "EconomicEntity", "pattern": "pension fund"},
+        {"label": "EconomicEntity", "pattern": "investment firm"},
+        {"label": "EconomicEntity", "pattern": "venture capitalist"},
+        {"label": "EconomicEntity", "pattern": "angel investor"},
+        {"label": "EconomicEntity", "pattern": "mutual fund"},
+        {"label": "EconomicEntity", "pattern": "credit union"},
+        {"label": "EconomicEntity", "pattern": "brokerage firm"},
+        {"label": "EconomicEntity", "pattern": "insurance company"},
+        {"label": "EconomicEntity", "pattern": "financial regulator"},
+        {"label": "EconomicEntity", "pattern": "sovereign debt holder"},
+        {"label": "EconomicEntity", "pattern": "corporate bondholder"},
+        {"label": "EconomicEntity", "pattern": "institutional investor"},
+        {"label": "GeographicRegion", "pattern": "developed economies"},
+        {"label": "GeographicRegion", "pattern": "emerging markets"},
+        {"label": "GeographicRegion", "pattern": "developed countries"},
+        {"label": "GeographicRegion", "pattern": "developing nations"},
+        {"label": "GeographicRegion", "pattern": "global regions (north america, asia-pacific, europe, etc.)"},
+        {"label": "GeographicRegion", "pattern": "economic zones"},
+        {"label": "GeographicRegion", "pattern": "free trade zones"},
+        {"label": "GeographicRegion", "pattern": "emerging markets"},
+        {"label": "GeographicRegion", "pattern": "developing economies"},
+        {"label": "GeographicRegion", "pattern": "global economies"},
+        {"label": "GeographicRegion", "pattern": "regional blocs (eu, asean, nafta)"},
+        {"label": "GeographicRegion", "pattern": "economic zones"},
+        {"label": "GeographicRegion", "pattern": "special economic zones"},
+        {"label": "GeographicRegion", "pattern": "economic corridors"},
+        {"label": "GeographicRegion", "pattern": "economic blocs"},
+        {"label": "GeographicRegion", "pattern": "economic alliances"},
+        {"label": "GeographicRegion", "pattern": [{"LOWER": "global"}, {"LOWER": "stock"}, {"LOWER": "markets"}]},
+        {"label": "EconomicSituation", "pattern": [{"LOWER": "sub-prime"}, {"LOWER": "mortgage"}, {"LOWER": "crisis"}]},
+        {"label": "FinancialIndicator", "pattern": [{"LOWER": "dow"}, {"LOWER": "jones"}, {"LOWER": "industrial"}, {"LOWER": "average"}]},
+        {"label": "GeographicRegion", "pattern": [{"LOWER": "uk"}]},
+        {"label": "FinancialIndicator", "pattern": [{"LOWER": "ftse-100"}, {"LOWER": "index"}]},
+        {"label": "GeographicRegion", "pattern": [{"LOWER": "japan"}]},
+        {"label": "FinancialIndicator", "pattern": [{"LOWER": "nikkei"}, {"LOWER": "225"}]},
+    ]
+
+        #ruler.add_patterns(patterns)
+
+        #---------------------------------------stock market patterns--------------------------------------------
+
         #coref = neuralcoref.NeuralCoref(self.nlp.vocab)
         #self.nlp.add_pipe(coref, name='neuralcoref')
         #self.nlp.add_pipe('opentapioca')
@@ -54,23 +231,23 @@ class GraphBasedNLP(GraphDBBase):
         self.nlp.add_pipe("srl")
 
 
-        print(self.nlp.pipe_names)
+        #print(self.nlp.pipe_names)
 
         self.__text_processor = TextProcessor(self.nlp, self._driver)
         self.create_constraints()
 
     def create_constraints(self):
-        self.execute_without_exception("CREATE CONSTRAINT ON (u:Tag) ASSERT (u.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (i:TagOccurrence) ASSERT (i.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (t:Sentence) ASSERT (t.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (l:AnnotatedText) ASSERT (l.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (l:NamedEntity) ASSERT (l.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (l:Entity) ASSERT (l.type, l.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (l:Evidence) ASSERT (l.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (l:Relationship) ASSERT (l.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (l:NounChunk) ASSERT (l.id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (l:TEvent) ASSERT (l.eiid, l.doc_id) IS NODE KEY")
-        self.execute_without_exception("CREATE CONSTRAINT ON (l:TIMEX) ASSERT (l.tid, l.doc_id) IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (u:Tag) require u.id IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (i:TagOccurrence) require i.id IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (t:Sentence) require t.id IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (l:AnnotatedText) require l.id IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (l:NamedEntity) require l.id IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (l:Entity) require (l.type, l.id) IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (l:Evidence) require l.id IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (l:Relationship) require l.id IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (l:NounChunk) require l.id IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (l:TEvent) require (l.eiid, l.doc_id) IS NODE KEY")
+        self.execute_without_exception("CREATE CONSTRAINT for (l:TIMEX) require (l.tid, l.doc_id) IS NODE KEY")
         #self.execute_without_exception("CREATE CONSTRAINT ON (l:CorefMention) ASSERT (l.id) IS NODE KEY")
 
         
@@ -85,7 +262,6 @@ class GraphBasedNLP(GraphDBBase):
             # checking if it is a file
             if os.path.isfile(f):
                 print(filename)
-
                 tree = ET.parse('/home/neo/environments/text2graphs/text2graphs/dataset/'+filename)
                 root = tree.getroot()
                 text = root[1].text

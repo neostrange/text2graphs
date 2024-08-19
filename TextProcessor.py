@@ -68,6 +68,8 @@ class TextProcessor(object):
         graph = Graph(self.uri, auth=(self.username, self.password))
         result = callAllenNlpCoref("coreference-resolution", doc.text )
 
+
+        print("Coref Result: ", result)
         sg=""
         PARTICIPANT = Relationship.type("PARTICIPANT")
         PARTICIPATES_IN = Relationship.type("PARTICIPATES_IN")
@@ -88,12 +90,12 @@ class TextProcessor(object):
                 if i == 0:
                     i+=1
                     # the first span will be the antecedent for all other references
-                    antecedent_span = doc[span_token_indexes[0]:span_token_indexes[-1]+1]
-                    antecedent_node = {'start_index': span_token_indexes[0], 'end_index': span_token_indexes[-1]+1, 'text': antecedent_span.text}
-                    antecendent_node = Node("Antecedent", text= antecedent_span.text, startIndex=span_token_indexes[0], endIndex=span_token_indexes[-1]+1)
+                    antecedent_span = doc[span_token_indexes[0]:span_token_indexes[-1]] #updated for index
+                    antecedent_node = {'start_index': span_token_indexes[0], 'end_index': span_token_indexes[-1], 'text': antecedent_span.text} # updated for -1 index
+                    antecendent_node = Node("Antecedent", text= antecedent_span.text, startIndex=span_token_indexes[0], endIndex=span_token_indexes[-1]) # updated for -1 index
                     antecedent_node_start_index = span_token_indexes[0]
                     # connect the antecedentNode node with all the participating tagOccurrences
-                    index_range = range(span_token_indexes[0], span_token_indexes[-1]+1)
+                    index_range = range(span_token_indexes[0], span_token_indexes[-1])
                     atg=""
                     for index in index_range:
                         query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
@@ -111,15 +113,15 @@ class TextProcessor(object):
                     # antecedent-tagOccurrences sub-graph creation end. 
                     continue
 
-                coref_mention_span = doc[span_token_indexes[0]:span_token_indexes[-1]+1]
-                coref_mention_node = {'start_index': span_token_indexes[0], 'end_index': span_token_indexes[-1]+1, 'text': coref_mention_span.text}
-                corefMention_node = Node("CorefMention", text= coref_mention_span.text, startIndex=span_token_indexes[0], endIndex=span_token_indexes[-1]+1)
+                coref_mention_span = doc[span_token_indexes[0]:span_token_indexes[-1]] #updated index
+                coref_mention_node = {'start_index': span_token_indexes[0], 'end_index': span_token_indexes[-1], 'text': coref_mention_span.text} #updated index
+                corefMention_node = Node("CorefMention", text= coref_mention_span.text, startIndex=span_token_indexes[0], endIndex=span_token_indexes[-1]) #updated index
                 #mention = {'from_index': span[-1], 'to_index': antecedent}
                 #mention = { 'referent': coref_mention_span, 'antecedent': antecedent_span}
                 mention = { 'referent': coref_mention_node, 'antecedent': antecedent_node}
                 
                 # connect the corefMention node with all the participating tagOccurrences
-                index_range = range(span_token_indexes[0], span_token_indexes[-1]+1)
+                index_range = range(span_token_indexes[0], span_token_indexes[-1]) #updated index
                 ctg=""
                 for index in index_range:
                     query = "match (x:TagOccurrence {tok_index_doc:" + str(index) + "})-[:HAS_TOKEN]-()-[:CONTAINS_SENTENCE]-(:AnnotatedText {id:"+str(doc._.text_id)+"}) return x"
@@ -920,7 +922,7 @@ class TextProcessor(object):
     # specifically those classified as 'CARDINAL', 'DATE', 'ORDINAL', 'MONEY', 'TIME', 'QUANTITY', or 'PERCENT'.
     #  For the rest of the entities, we gave priority to the results from DBpedia-spotlight.
     #  However, there were instances where entities were detected by spaCy NER but not by DBpedia-spotlight 
-    # and were not part of the preferred list. In such cases, we kept those entities as is.   
+    # and were not part of the preferred list. In such cases, we kept those entities as it is.   
 
     def deduplicate_named_entities(self, document_id):
 

@@ -1,0 +1,395 @@
+# how to detect event - to - event connections.
+#R1.0
+match p = (e1:TEvent)-[]-(f:Frame)--(fa:FrameArgument)-[:PARTICIPATES_IN]-(t:TagOccurrence {tok_index_doc:fa.headTokenIndex})-[:TRIGGERS]-(e2:TEvent)
+where fa.headPos in ['VBG', 'VB','VBD']
+return p
+
+# R1.1 
+match p = (e1:TEvent)-[]-(f:Frame)--(fa:FrameArgument)-[:PARTICIPATES_IN]-(t:TagOccurrence {tok_index_doc:fa.headTokenIndex})-[:TRIGGERS]-(e2:TEvent)
+merge (e1)<-[:PARTICIPATES{type: coalesce(fa.argumentType,fa.type)}]-(e2)
+return p
+
+# R1.2
+match p = (e1:TEvent)-[]-(f:Frame)--(fa:FrameArgument)-[:PARTICIPATES_IN]-(t:TagOccurrence {tok_index_doc:fa.headTokenIndex})-[:TRIGGERS]-(e2:TEvent)
+merge (e1)<-[:PARTICIPANT{type: coalesce(fa.argumentType,fa.type)}]-(e2)
+return p
+-----------------------------------------------------------------------------------------------------------------------
+# this rule is an extension to R1 but it make use of the pcomp token not the headword. As the headword is a preposition 
+and its p
+# R2.0
+match p = (e1:TEvent)-[]-(f:Frame)--(fa:FrameArgument)-[:PARTICIPATES_IN]-(t:TagOccurrence)-[:TRIGGERS]-(e2:TEvent), 
+(h:TagOccurrence {tok_index_doc:fa.headTokenIndex})-[:IS_DEPENDENT {type:'pcomp'}]->(t)
+merge (e1)<-[:PARTICIPANT{type: coalesce(fa.argumentType,fa.type)}]-(e2)
+return p
+
+
+
+-----------------------------------------------------------------------------------------------------------------------
+
+# event enrichment , event identification signalled by ARGM-PRD
+# example sentence: 
+# "Yesterday, the U.S. Federal Reserve transferred US$24 billion to temporary reserves,
+ following the European Central Bank, which authorized a record €83.6 billion addition
+  to its banks, its biggest cash infusion ever."
+# Here the span 'its biggest cash infusion ever' is argm-adv signalling for the presence
+# of predicate. we can employ wordnet for headword 'infusion' which is event. 
+# so rule can be created for 'ARGM-ADV' when headword is even noun but wordnet give
+# indication of nominal event. 
+
+------------------------------------------event labels-----------------------------------
+// Define additional event labels without double quotes
+WITH{
+    e2957: {
+        Event_Trigger: "dragged",
+        General_Category: "MarketMovement",
+        Specific_Category: "Decline",
+        ARG0: "Credit Crisis",
+        ARG1: "Markets"
+    },
+    e2958: {
+        Event_Trigger: "fell",
+        General_Category: "MarketMovement",
+        Specific_Category: "Decline",
+        ARG1: "Global Stock Markets"
+    },
+    e2960: {
+        Event_Trigger: "stemming",
+        General_Category: "EconomicSituation",
+        Specific_Category: "Cause",
+        ARG1: "A Mass Sell-Off"
+    },
+    e2962: {
+        Event_Trigger: "rebounded",
+        General_Category: "MarketMovement",
+        Specific_Category: "Recovery",
+        ARG1: "Dow Jones Industrial Average"
+    },
+    e2963: {
+        Event_Trigger: "falling",
+        General_Category: "MarketMovement",
+        Specific_Category: "Decline",
+        ARG1: "Dow Jones Industrial Average"
+    },
+    e2964: {
+        Event_Trigger: "ending",
+        General_Category: "MarketMovement",
+        Specific_Category: "Decline",
+        ARG1: "Dow Jones Industrial Average"
+    },
+    e2965: {
+        Event_Trigger: "fell",
+        General_Category: "MarketMovement",
+        Specific_Category: "Decline",
+        ARG1: "Dow Jones Industrial Average"
+    },
+    e2966: {
+        Event_Trigger: "fell",
+        General_Category: "MarketMovement",
+        Specific_Category: "Decline",
+        ARG1: "The UK's FTSE-100 index"
+    },
+    e2967: {
+        Event_Trigger: "injecting",
+        General_Category: "FinancialActivity",
+        Specific_Category: "FinancialInjection",
+        ARG0: "Central banks across the world",
+        ARG1: "funds"
+    },
+    e2968: {
+        Event_Trigger: "add",
+        General_Category: "FinancialActivity",
+        Specific_Category: "MarketIntervention",
+        ARG0: "Central banks across the world",
+        ARG1: "Market_liquidity"
+    },
+    e2970: {
+        Event_Trigger: "fearing",
+        General_Category: "EconomicPolicy",
+        Specific_Category: "CentralBankAction",
+        ARG0: "Central banks across the world"
+    },
+    e2972: {
+        Event_Trigger: "transferred",
+        General_Category: "FinancialActivity",
+        Specific_Category: "FinancialTransaction",
+        ARG0: "Federal_Reserve",
+        ARG1: "1_632_645_MONEY"
+    },
+    e2974: {
+        Event_Trigger: "authorized",
+        General_Category: "EconomicPolicy",
+        Specific_Category: "BankingDecision",
+        ARG0: "European_Central_Bank",
+        ARG1: "a record €83.6 billion addition to its banks"
+    },
+    e2976: {
+        Event_Trigger: "entered",
+        General_Category: "FinancialActivity",
+        Specific_Category: "FinancialTransaction",
+        ARG0: "Federal_Reserve",
+        ARG1: "Repurchase_agreement"
+    },
+    e2977: {
+        Event_Trigger: "injected",
+        General_Category: "FinancialActivity",
+        Specific_Category: "FinancialInjection",
+        ARG0: "the Bank of Japan",
+        ARG1: "1_970_981_MONEY"
+    },
+    e2978: {
+        Event_Trigger: "met",
+        General_Category: "EconomicPolicy",
+        Specific_Category: "DecisionMaking",
+        ARG0: "Federal_Reserve"
+    },
+    e2979: {
+        Event_Trigger: "decided",
+        General_Category: "EconomicPolicy",
+        Specific_Category: "DecisionMaking",
+        ARG0: "Federal_Reserve"
+    },
+    e2980: {
+        Event_Trigger: "maintain",
+        General_Category: "EconomicPolicy",
+        Specific_Category: "InterestRatePolicy",
+        ARG0: "Federal_Reserve",
+        ARG1: "its target rate of 5.25%"
+    },
+    e2981: {
+        Event_Trigger: "hovering",
+        General_Category: "FinancialIndicator",
+        Specific_Category: "InterestRate",
+        ARG1: "Federal_funds_rate"
+    },
+    e2982: {
+        Event_Trigger: "indicating",
+        General_Category: "FinancialAspect",
+        Specific_Category: "MarketCondition",
+        ARG1: "a drop in liquidity"
+    },
+    e2984: {
+        Event_Trigger: "began",
+        General_Category: "TimePeriod",
+        Specific_Category: "Volatility",
+        ARG1: "The volatile week"
+    },
+    e2985: {
+        Event_Trigger: "tumbling",
+        General_Category: "MarketMovement",
+        Specific_Category: "Decline",
+        ARG1: "Bear Stearns"
+    },
+    e2988: {
+        Event_Trigger: "exposed",
+        General_Category: "FinancialEvent",
+        Specific_Category: "FinancialCrisis",
+        ARG1: "The hedge funds"
+    },
+    e2990: {
+        Event_Trigger: "announced",
+        General_Category: "CorporateEvent",
+        Specific_Category: "PublicStatement",
+        ARG0: "the company"
+    },
+    e2992: {
+        Event_Trigger: "return",
+        General_Category: "FinancialActivity",
+        Specific_Category: "FinancialTransaction",
+        ARG0: "Bear Stearns",
+        ARG1: "any money"
+    },
+    e2993: {
+        Event_Trigger: "saw",
+        General_Category: "MarketParticipant",
+        Specific_Category: "Observation",
+        ARG0: "Washington Mutual"
+    },
+    e2994: {
+        Event_Trigger: "fall",
+        General_Category: "MarketMovement",
+        Specific_Category: "Decline",
+        ARG1: "shares"
+    },
+    e2995: {
+        Event_Trigger: "made",
+        General_Category: "CorporateEvent",
+        Specific_Category: "PublicStatement",
+        ARG0: "Bank_of_America_Home_Loans",
+        ARG1: "a statement"
+    },
+    e2997: {
+        Event_Trigger: "saying",
+        General_Category: "CorporateEvent",
+        Specific_Category: "PublicStatement",
+        ARG0: "Bank_of_America_Home_Loans"
+    },
+    e2998: {
+        Event_Trigger: "forced",
+        General_Category: "FinancialActivity",
+        Specific_Category: "Action",
+        ARG1: "Bank_of_America_Home_Loans",
+        ARG0: "Bank_of_America_Home_Loans"
+    },
+    e2999: {
+        Event_Trigger: "retain",
+        General_Category: "FinancialActivity",
+        Specific_Category: "LoanPolicy",
+        ARG1: "a greater proportion of mortgage",
+        ARG0: "Bank_of_America_Home_Loans"
+    },
+    e3000: {
+        Event_Trigger: "filed",
+        General_Category: "CorporateEvent",
+        Specific_Category: "LegalAction",
+        ARG1: "Bankruptcy_of_Lehman_Brothers",
+        ARG0: "American Home Mortgage Investment Corp"
+    },
+    e3001: {
+        Event_Trigger: "declining",
+        General_Category: "RealEstateMarket",
+        Specific_Category: "PropertyValue",
+        ARG1: "The U.S. housing market"
+    },
+    e3002: {
+        Event_Trigger: "raised",
+        General_Category: "FinancialIndicator",
+        Specific_Category: "InterestRate",
+        ARG0: "Federal_Reserve",
+        ARG1: "interest rates"
+    },
+    e3005: {
+        Event_Trigger: "repay",
+        General_Category: "FinancialActivity",
+        Specific_Category: "LoanRepayment",
+        ARG1: "loans"
+    },
+    e3006: {
+        Event_Trigger: "remarked",
+        General_Category: "Communication",
+        Specific_Category: "PublicStatement",
+        ARG0: "Jim Cramer"
+    },
+    e3007: {
+        Event_Trigger: "lose",
+        General_Category: "EconomicAspect",
+        Specific_Category: "FinancialHardship",
+        ARG1: "their homes",
+        ARG0: "as many as seven million people"
+    },
+    e3008: {
+        Event_Trigger: "went",
+        General_Category: "PublicBehavior",
+        Specific_Category: "PublicBehavior",
+        ARG0: "Jim Cramer",
+        ARG1: "a tirade on CNBC's Street Signs"
+    },
+    e3010: {
+        Event_Trigger: "saying",
+        General_Category: "Communication",
+        Specific_Category: "PublicStatement",
+        ARG0: "Jim Cramer"
+    },
+    e3012: {
+        Event_Trigger: "called",
+        General_Category: "Communication",
+        Specific_Category: "PublicStatement",
+        ARG0: "Jim Cramer"
+    },
+    e3013: {
+        Event_Trigger: "become",
+        General_Category: "MarketParticipant",
+        Specific_Category: "StatusChange",
+        ARG1: "Asian and European markets"
+    },
+    e3014: {
+        Event_Trigger: "entangled",
+        General_Category: "EconomicAspect",
+        Specific_Category: "Interference",
+        ARG1: "Asian and European markets"
+    },
+    e3016: {
+        Event_Trigger: "lost",
+        General_Category: "FinancialEvent",
+        Specific_Category: "FinancialCrisis",
+        ARG0: "Deutsche_Bank",
+        ARG1: "1_2536_2555_MONEY"
+    },
+    e3017: {
+        Event_Trigger: "forcing",
+        General_Category: "CorporateEvent",
+        Specific_Category: "LegalAction",
+        ARG0: "Deutsche_Bank",
+        ARG1: "the government"
+    },
+    e3018: {
+        Event_Trigger: "organize",
+        General_Category: "FinancialRescue",
+        Specific_Category: "BailOut",
+        ARG1: "a bail-out",
+        ARG0: "the government"
+    },
+    e3019: {
+        Event_Trigger: "halted",
+        General_Category: "FinancialRescue",
+        Specific_Category: "BailOut",
+        ARG0: "France's largest bank, BNP Paribas SA",
+        ARG1: "withdrawals from three large investment funds which were crippled by sub-prime exposure"
+    },
+    e3021: {
+        Event_Trigger: "crippled",
+        General_Category: "FinancialEvent",
+        Specific_Category: "FinancialCrisis",
+        ARG1: "three large investment funds",
+        ARG0: "sub-prime exposure"
+    }
+}
+AS newEventLabels
+
+//return newEventLabels['stemming']['General_Category']
+
+unwind keys(newEventLabels) as eventTrigger
+match(event:TEvent) where id(event) = toInteger(substring(eventTrigger,1))
+set event.generalCategory = newEventLabels[eventTrigger]['General_Category'], 
+event.specificCategory = newEventLabels[eventTrigger]['Specific_Category']
+
+
+****************************************************************************************************************
+WITH {
+  MarketMovement: {
+    verbs: ["fell", "rose", "surged", "plunged", "rebounded", "tumbled", "dropped", "increased", "decreased", "fluctuated"],
+    context: ["stock market", "market", "index", "shares", "prices"],
+    ARG1: ["MarketIndex", "MarketIndicator", "StockPrice", "FinancialIndicator", "Market", "FinancialRescue"]
+  },
+  FinancialTransaction: {
+    verbs: ["bought", "sold", "purchased", "traded", "acquired", "exchanged", "invested"],
+    context: ["stocks", "securities", "assets", "investments", "trades"],
+    ARG0: ["PERSON", "ORG", "FinancialInstitution", "MarketParticipant"],
+    ARG1: ["FinancialInstrument", "Stock", "Asset", "Security"]
+  },
+  RegulatoryAction: {
+    verbs: ["regulated", "legislated", "authorized", "announced", "implemented", "enforced"],
+    context: ["regulation", "policy", "law", "government"],
+    ARG0: ["Government", "RegulatoryBody"],
+    ARG1: ["Policy", "Decision", "Rule", "Law"]
+  },
+  FinancialCrisis: {
+    verbs: ["crashed", "collapsed", "defaulted", "plummeted", "bankrupted", "failed", "crisis", "insolvent"],
+    context: ["financial crisis", "economic downturn", "bankruptcy", "default", "market crash"],
+    ARG1: ["FinancialEntity", "Market", "EconomicEntity", "FinancialInstrument"],
+    ARG2: ["Cause", "Reason"]
+  },
+  FinancialRescue: {
+    verbs: ["bailed out", "rescued", "aided", "assisted", "funded"],
+    context: ["bailout", "rescue", "aid", "financial support"],
+    ARG0: ["Government", "FinancialInstitution", "CentralBank"],
+    ARG1: ["FinancialEntity", "Market", "EconomicEntity"],
+    ARG2: ["Amount", "Funds"]
+  },
+  MarketAnalysis: {
+    verbs: ["analyzed", "evaluated", "predicted", "forecasted", "projected"],
+    context: ["analysis", "evaluation", "prediction", "forecast"],
+    ARG0: ["Analyst", "Expert", "Organization"],
+    ARG1: ["Market", "Stock", "FinancialInstrument"],
+    ARG2: ["Analysis", "Forecast", "Prediction"]
+  }
+} AS rules
