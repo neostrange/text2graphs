@@ -216,10 +216,10 @@ class GraphBasedNLP(GraphDBBase):
         #coref = neuralcoref.NeuralCoref(self.nlp.vocab)
         #self.nlp.add_pipe(coref, name='neuralcoref')
         #self.nlp.add_pipe('opentapioca')
-        #self.nlp.add_pipe("entityfishing", config= {"api_ef_base": "http://localhost:8090/service", "extra_info": True})
+        #self.nlp.add_pipe("entityfishing", config= {"api_ef_base": "http://localhost:8090/service", "extra_info": True, "dbpedia_rest_endpoint": "http://localhost:2222/rest"})
         # add the pipeline stage
         # self.nlp.add_pipe('segm', before='parser')
-        self.nlp.add_pipe('dbpedia_spotlight', config={'confidence': 0.5, 'overwrite_ents': True})
+        self.nlp.add_pipe('dbpedia_spotlight', config={'confidence': 0.5, 'overwrite_ents': True, 'dbpedia_rest_endpoint': 'http://localhost:2222/rest'})
         
         #self.nlp.add_pipe('coreferee')
         #self.nlp.add_pipe("xx_coref", config={"chunk_size": 2500, "chunk_overlap": 2, "device": 0})
