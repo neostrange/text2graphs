@@ -256,13 +256,13 @@ class GraphBasedNLP(GraphDBBase):
     # keeping copies of files at both sides is temporaray solution, later we can keep files and neo4j instance at same location
     def store_corpus(self, directory):
         text_id = 1
-        path= '/home/neo/environments/text2graphs/text2graphs/dataset/'
+        path= '/home/neo/environments/text2graphs/text2graphs/data/dataset/'
         for filename in os.listdir(directory):
             f = os.path.join(directory, filename)
             # checking if it is a file
             if os.path.isfile(f):
                 print(filename)
-                tree = ET.parse('/home/neo/environments/text2graphs/text2graphs/dataset/'+filename)
+                tree = ET.parse('/home/neo/environments/text2graphs/text2graphs/data/dataset/'+filename)
                 root = tree.getroot()
                 text = root[1].text
                 #text = text.replace('\n\n','. ')
@@ -332,7 +332,7 @@ if __name__ == '__main__':
 
     #directory = r'C:\Users\neo strange\.Neo4jDesktop\relate-data\dbmss\dbms-526a9b9e-9d99-4d7f-8a1b-47e71323376f\import'
     
-    directory = r'/../home/neo/environments/text2graphs/text2graphs/dataset'
+    directory = r'/../home/neo/environments/text2graphs/text2graphs/data/dataset'
    
     
     # stores the file as a node in neo4j
