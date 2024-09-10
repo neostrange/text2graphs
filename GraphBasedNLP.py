@@ -14,7 +14,6 @@ from spacy.lang.char_classes import CONCAT_QUOTES, LIST_ELLIPSES, LIST_ICONS
 from spacy.util import compile_infix_regex
 
 
-
 class GraphBasedNLP(GraphDBBase):
 
 
@@ -24,8 +23,6 @@ class GraphBasedNLP(GraphDBBase):
         spacy.prefer_gpu()
 
         self.nlp = spacy.load('en_core_web_trf')
-
-        #-----------------------alter tokenization behavior for hyphens when used as infix------------
 
         # Modify tokenizer infix patterns
         infixes = (
@@ -71,36 +68,6 @@ class GraphBasedNLP(GraphDBBase):
         self.execute_without_exception("CREATE CONSTRAINT for (l:TIMEX) require (l.tid, l.doc_id) IS NODE KEY")
         #self.execute_without_exception("CREATE CONSTRAINT ON (l:CorefMention) ASSERT (l.id) IS NODE KEY")
 
-        
-
-    # filenames are retrieved from the wsl2 ubuntu instance but neo4j accesses these files from its import directory
-    # keeping copies of files at both sides is temporaray solution, later we can keep files and neo4j instance at same location
-    def store_corpus2(self, directory):
-        text_id = 1
-        path= '/home/neo/environments/text2graphs/text2graphs/data/dataset/'
-        for filename in os.listdir(directory):
-            f = os.path.join(directory, filename)
-            # checking if it is a file
-            if os.path.isfile(f):
-                print(filename)
-                tree = ET.parse('/home/neo/environments/text2graphs/text2graphs/data/dataset/'+filename)
-                root = tree.getroot()
-                text = root[1].text
-                #text = text.replace('\n\n','. ')
-                text = text.replace('\n','')
-                # getting the text of the file as string
-                text_file = open(path+filename, 'r')
-                data = text_file.read()
-                text_file.close()
-                #storing the corpus files as nodes in neo4j with meta-data
-                #self.__text_processor.create_annotated_text(filename, text, text_id)
-                self.__text_processor.create_annotated_text(data, text, text_id)
-                text_id+=1
-        
-        text_tuples = tuple(self.__text_processor.get_annotated_text())
-        #text_tuples = self.__text_processor.get_annotated_text()
-        return text_tuples
-    
 
 
     def store_corpus(self, directory):
@@ -165,18 +132,6 @@ class GraphBasedNLP(GraphDBBase):
             coref = self.__text_processor.do_coref2(doc, text_id)
             self.__text_processor.build_entities_inferred_graph(text_id)
             self.__text_processor.apply_pipeline_1(doc)
-
-# if __name__ == '__main__':
-#     basic_nlp = GraphBasedNLP(sys.argv[1:])
-    
-#     directory = r'/../home/neo/environments/text2graphs/text2graphs/data/dataset'
-    
-#     # stores the file as a node in neo4j
-#     text_tuples = basic_nlp.store_corpus(directory)
-
-#     basic_nlp.tokenize_and_store(text_tuples=text_tuples, text_id= 1, storeTag= False)
-    
-#     basic_nlp.close()
 
 
 if __name__ == '__main__':
