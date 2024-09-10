@@ -75,7 +75,7 @@ class GraphBasedNLP(GraphDBBase):
 
     # filenames are retrieved from the wsl2 ubuntu instance but neo4j accesses these files from its import directory
     # keeping copies of files at both sides is temporaray solution, later we can keep files and neo4j instance at same location
-    def store_corpus(self, directory):
+    def store_corpus2(self, directory):
         text_id = 1
         path= '/home/neo/environments/text2graphs/text2graphs/data/dataset/'
         for filename in os.listdir(directory):
@@ -99,6 +99,26 @@ class GraphBasedNLP(GraphDBBase):
         
         text_tuples = tuple(self.__text_processor.get_annotated_text())
         #text_tuples = self.__text_processor.get_annotated_text()
+        return text_tuples
+    
+
+
+    def store_corpus(self, directory):
+        text_id = 1
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
+            if os.path.isfile(f):
+                print(filename)
+                tree = ET.parse(f)
+                root = tree.getroot()
+                text = root[1].text
+                text = text.replace('\n', '')
+                with open(f, 'r') as text_file:
+                    data = text_file.read()
+                self.__text_processor.create_annotated_text(data, text, text_id)
+                text_id += 1
+        
+        text_tuples = tuple(self.__text_processor.get_annotated_text())
         return text_tuples
 
     def tokenize_and_store(self, text_tuples, text_id, storeTag):
