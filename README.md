@@ -1,5 +1,6 @@
 
 # Text2Graph: Autonomous Knowledge Graph Generation Framework
+
 Text2Graph is a Python-based framework for the autonomous construction of domain-specific Knowledge Graphs (KG) from unstructured text data. The system transforms textual data into a labeled property graph-based representation using various NLP and semantic processing tools and integrates with Neo4j for graph storage and querying.
 
 ## Features
@@ -126,17 +127,76 @@ If you need to work with nested directories, you can add the current working dir
 ```bash
 export PYTHONPATH="$(pwd):$PYTHONPATH"
 ```
+## Run the Pipeline
 
-**Run the Pipeline:**
+The Text2Graph pipeline is a modular system designed to efficiently generate Knowledge Graphs from textual data. It consists of several distinct phases, each focusing on specific NLP tasks. Let's walk through how to run the pipeline and explore each phase:
 
-After setting up the environment and ensuring the Docker services are running, you can start processing text documents using the pipeline to generate the Knowledge Graph:
+**Phase 1: Basic Linguistic Analysis (python3 GraphBasedNLP.py --input /path/to/text/documents)**
 
-```bash
-python3 text2graph.py --input /path/to/text/documents
-```
+* **Function:** This phase performs the foundational tasks of Natural Language Processing (NLP) on the input text documents. 
+* **Input:** You can specify the path to your text documents using the `--input` argument. If no argument is provided, the script will load text data files by default from the `data/dataset` folder within the Text2Graph repository. Currently, this folder contains pre-loaded files from the MEANTIME corpus for your convenience.
+
+**Running Phase 1:**
+
+1. Open a terminal window and navigate to the directory containing the `GraphBasedNLP.py` script within your Text2Graph installation.
+2. (Optional) If you have your own text documents, execute the script with the `--input` argument followed by the path to your data directory:
+
+   ```bash
+   python3 GraphBasedNLP.py --input /path/to/your/text/documents
+3. If you'd like to use the pre-loaded MEANTIME corpus data, simply run the script without any arguments:
+   ```bash
+   python3 GraphBasedNLP.py```
+
+**Phase 2: Refinement Phase**
+* **Function:** This phase focuses on refining the extracted information from Phase 1. It establishes connections between different linguistic elements and ensures consistency within the data.
+* **Input:** The output from Phase 1 (typically stored in a Neo4j database) serves as the input for this phase.
+**Running Phase 2:**
+
+1. Ensure Phase 1 has completed successfully.
+2. Navigate to the directory containing the RefinementPhase.py script.
+3. Execute the script
+   ```bash
+   python3 RefinementPhase.py
+**Phase 3: Temporal Enrichment**
+
+* **Function:** This phase enriches the Knowledge Graph with temporal information. It involves identifying and tagging time expressions and event triggers within the text data.
+* **Input:** The refined data from Phase 2 is used as input for this phase.
+
+**Running Phase 3:**
+1. Ensure Phases 1 and 2 have completed successfully.
+2. Navigate to the directory containing the TemporalPhase.py script.
+3. Execute the script:
+   ```bash
+   python3 TemporalPhase.py
+**Phase 4: Event Enrichment**
+* **Function:** This phase focuses on enriching event information within the Knowledge Graph. It establishes links between identified events and entities, as well as other events, based on the linguistic elements present in the graph.
+* **Input:** The temporally enriched data from Phase 3 is used as input for this phase.
+
+**Running Phase 4:**
+1. Ensure Phases 1, 2 and 3 have completed successfully.
+2. Navigate to the directory containing the EventEnrichmentPhase.py script.
+3. Execute the script:   
+   ```bash
+   python3 EventEnrichmentPhase.py
+
+**Phase 5: TLink Recognition**
+
+**Function:** This phase aims to identify Temporal Links (TLinks) within the Knowledge Graph. TLinks describe temporal relationships between events, such as "before," "after," or "during".  
+**Input:** The event-enriched data from phase 4, will serve as input for TLink recognition.
+**Running Phase 5:**
+1. Ensure all the previous steps have been completed.
+2. Navigate to the directory containing TlinksRecognizer.py script.
+3. Execute the script:
+   ```bash
+   python3 TlinksRecognizer.py
+
+
+
 
 ## Neo4j Interaction
-Neo4j Interaction: The framework provides REST endpoints (powered by FastAPI) to query the generated Knowledge Graph in Neo4j.
+Note: While the REST endpoints powered by FastAPI are not yet implemented, you can still interact with the generated Knowledge Graph directly through the Neo4j Browser or Neo4j Bloom.
+
+These tools provide a user-friendly interface for exploring and querying the graph data. You can execute Cypher queries to retrieve specific information or visualize the graph structure.
 
 
 ## Contributing to Text2Graph
@@ -148,16 +208,3 @@ We appreciate your contributions to Text2Graph! By following these guidelines, y
 ![App Screenshot](https://github.com/neostrange/text2graphs/blob/main/images/Screenshot%202024-06-10%20105103.png)
 
 ![App Screenshot](https://github.com/neostrange/text2graphs/blob/main/images/Screenshot%202024-06-10%20105205.png)
-
-
-
-
-
-
-
-
-
-
-
-
-
