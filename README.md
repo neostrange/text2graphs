@@ -207,6 +207,16 @@ These tools provide a user-friendly interface for exploring and querying the gra
 
 
 
+
+
+
+
+
+
+
+
+
+
 ## Publications
 
 1. A. Hur, N. Janjua, and M. Ahmed, "A Survey on State-of-the-art Techniques for Knowledge Graphs Construction and Challenges ahead," 2021 IEEE Fourth International Conference on Artificial Intelligence and Knowledge Engineering (AIKE), Laguna Hills, CA, USA, 2021, pp. 99-103, doi: [10.1109/AIKE52691.2021.00021](https://doi.org/10.1109/AIKE52691.2021.00021).
@@ -217,8 +227,9 @@ These tools provide a user-friendly interface for exploring and querying the gra
 
 ## Contributing to Text2Graph
 
-**We welcome contributions to Text2Graph!** If you have any bugs to report, feature requests, or would like to contribute new functionality, please submit a pull request or open an issue on our GitHub repository.
-We appreciate your contributions to Text2Graph! By following these guidelines, you can help us improve the framework and make it more valuable for the community.
+**We welcome contributions to Text2Graph!** If you encounter any bugs, have feature requests, or wish to contribute new functionality, please submit a pull request or open an issue on our GitHub repository. Your contributions help us enhance Text2Graph and make it more valuable for the community.
+
+Thank you for your support!
 ## License
 
 This project is licensed under the [MIT](https://choosealicense.com/licenses/mit/) License. See the [LICENSE](https://github.com/neostrange/text2graphs/blob/main/LICENSE) file for details.
