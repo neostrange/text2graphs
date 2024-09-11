@@ -207,7 +207,7 @@ These tools provide a user-friendly interface for exploring and querying the gra
 
 
 
-## References
+## Publications
 
 1. A. Hur, N. Janjua, and M. Ahmed, "A Survey on State-of-the-art Techniques for Knowledge Graphs Construction and Challenges ahead," 2021 IEEE Fourth International Conference on Artificial Intelligence and Knowledge Engineering (AIKE), Laguna Hills, CA, USA, 2021, pp. 99-103, doi: [10.1109/AIKE52691.2021.00021](https://doi.org/10.1109/AIKE52691.2021.00021).
 
