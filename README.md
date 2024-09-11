@@ -218,7 +218,7 @@ These tools provide a user-friendly interface for exploring and querying the gra
 ## Contributing to Text2Graph
 
 **We welcome contributions to Text2Graph!** If you have any bugs to report, feature requests, or would like to contribute new functionality, please submit a pull request or open an issue on our GitHub repository.
-We appreciate your contributions to Text2Graph! By following these guidelines, you can help us improve the framework and make it more valuable for the community.
+We appreciate your contributions to Text2Graph!, you can help us improve the framework and make it more valuable for the community.
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
