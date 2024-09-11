@@ -1,5 +1,5 @@
 
-# Text2Graph: Autonomous Knowledge Graph Generation Framework
+# Text2Graph: Autonomous Knowledge Graph Construction Framework
 
 Text2Graph is a Python-based framework for the autonomous construction of domain-specific Knowledge Graphs (KG) from unstructured text data. The system transforms textual data into a labeled property graph-based representation using various NLP and semantic processing tools and integrates with Neo4j for graph storage and querying.
 
