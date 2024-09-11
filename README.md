@@ -76,30 +76,33 @@ Ensure Python 3.8+ is installed. You can install the required dependencies using
 To extend the pipeline, you must ensure the following Docker containers are running:
 
 * Coreference Resolution:
-    * Build from this repository: Spacy Coref Docker
+    * Build from this repository: [Spacy-Coref-Docker](https://github.com/neostrange/spacy-experimental-coref-docker)
     * Expose on localhost:9999:
         ```bash
         docker run -p 9999:9999 neostrange/spacy-experimental-coref
         ```
 * Event Tagging:
-    * Build from this repository: TTK Docker
+    * Build from this repository: [TTK Docker](https://github.com/neostrange/ttk_docker)
     * Expose on localhost:5050:
         ```bash
         docker run -p 5050:5050 neostrange/ttk
         ```
 * Temporal Expression Tagging:
-    * Use the HeidelTime WebService: HeidelTime WebService Docker
+    * Use the HeidelTime WebService: [HeidelTime-WebService-Docker](https://github.com/neostrange/HeidelTimeWebService)
     * Expose on localhost:5000:
         ```bash
         docker run -p 5000:5000 neostrange/heideltime
         ```
 * Word Sense Disambiguation:
-    * Use AMUSE-WSD Docker:
+    * For Word Sesnse Disambiguation, text2graph uses [AMuSE-WSD](https://aclanthology.org/2021.emnlp-demo.34/). 
+    * Please Follow the instructions given in [AMUSE-WSD](http://nlp.uniroma1.it/amuse-wsd/):
+    * Download the Docker image for AMUSE-WSD
     * Expose on localhost:81:
         ```bash
         docker run -p 81:81 amuse/amuse-wsd
         ```
 * Semantic Role Labeling:
+    * text2graph uses AllenNlp to perform semantic role labeling. You can find the instrcutions to setup docker container for [AllenNlp SRL](https://github.com/allenai/allennlp-demo)    
     * From AllenNLP Docker:
     * Expose on localhost:8000:
         ```bash
