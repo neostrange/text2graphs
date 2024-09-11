@@ -1,4 +1,6 @@
+
 # Text2Graph: Autonomous Knowledge Graph Generation Framework
+![App Screenshot](https://github.com/neostrange/text2graphs/blob/main/images/text2graph_logo.png)
 
 Text2Graph is a Python-based framework for the autonomous construction of domain-specific Knowledge Graphs (KG) from unstructured text data. The system transforms textual data into a labeled property graph-based representation using various NLP and semantic processing tools and integrates with Neo4j for graph storage and querying.
 
@@ -143,3 +145,21 @@ Neo4j Interaction: The framework provides REST endpoints (powered by FastAPI) to
 
 **We welcome contributions to Text2Graph!** If you have any bugs to report, feature requests, or would like to contribute new functionality, please submit a pull request or open an issue on our GitHub repository.
 We appreciate your contributions to Text2Graph! By following these guidelines, you can help us improve the framework and make it more valuable for the community.
+## Screenshots
+
+![App Screenshot](https://github.com/neostrange/text2graphs/blob/main/images/Screenshot%202024-06-10%20105103.png)
+
+![App Screenshot](https://github.com/neostrange/text2graphs/blob/main/images/Screenshot%202024-06-10%20105205.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
