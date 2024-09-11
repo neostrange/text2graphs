@@ -199,12 +199,27 @@ Note: While the REST endpoints powered by FastAPI are not yet implemented, you c
 These tools provide a user-friendly interface for exploring and querying the graph data. You can execute Cypher queries to retrieve specific information or visualize the graph structure.
 
 
-## Contributing to Text2Graph
-
-**We welcome contributions to Text2Graph!** If you have any bugs to report, feature requests, or would like to contribute new functionality, please submit a pull request or open an issue on our GitHub repository.
-We appreciate your contributions to Text2Graph! By following these guidelines, you can help us improve the framework and make it more valuable for the community.
 ## Screenshots
 
 ![App Screenshot](https://github.com/neostrange/text2graphs/blob/main/images/Screenshot%202024-06-10%20105103.png)
 
 ![App Screenshot](https://github.com/neostrange/text2graphs/blob/main/images/Screenshot%202024-06-10%20105205.png)
+
+
+
+## References
+
+1. A. Hur, N. Janjua, and M. Ahmed, "A Survey on State-of-the-art Techniques for Knowledge Graphs Construction and Challenges ahead," 2021 IEEE Fourth International Conference on Artificial Intelligence and Knowledge Engineering (AIKE), Laguna Hills, CA, USA, 2021, pp. 99-103, doi: [10.1109/AIKE52691.2021.00021](https://doi.org/10.1109/AIKE52691.2021.00021).
+
+2. Ali Hur, Naeem Janjua, and Mohiuddin Ahmed, "Unifying context with labeled property graph: A pipeline-based system for comprehensive text representation in NLP," Expert Systems with Applications, Volume 239, 2024, 122269, doi: [10.1016/j.eswa.2023.122269](https://doi.org/10.1016/j.eswa.2023.122269).
+
+3. A. Hur, N. Janjua, "Constructing Domain-Specific Knowledge Graphs From Text: A Case Study on Subprime Mortgage Crisis," Special Issue on Knowledge Graph Construction, Semantic Web Journal (by IOS Press), 2024 **(Under Review)**.
+
+## Contributing to Text2Graph
+
+**We welcome contributions to Text2Graph!** If you have any bugs to report, feature requests, or would like to contribute new functionality, please submit a pull request or open an issue on our GitHub repository.
+We appreciate your contributions to Text2Graph! By following these guidelines, you can help us improve the framework and make it more valuable for the community.
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
+
