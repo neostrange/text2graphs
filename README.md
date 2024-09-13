@@ -22,7 +22,7 @@ Ensure Python 3.8+ is installed. You can install the required dependencies using
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/yourusername/text2graph.git
+   git clone https://github.com/neostrange/text2graph.git
    cd text2graph
 2. Install Spacy Mode
     ```bash
