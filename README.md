@@ -226,7 +226,6 @@ These tools provide a user-friendly interface for exploring and querying the gra
 
 2. Ali Hur, Naeem Janjua, and Mohiuddin Ahmed, "Unifying context with labeled property graph: A pipeline-based system for comprehensive text representation in NLP," Expert Systems with Applications, Volume 239, 2024, 122269, doi: [10.1016/j.eswa.2023.122269](https://doi.org/10.1016/j.eswa.2023.122269).
 
-3. A. Hur, N. Janjua, "Constructing Domain-Specific Knowledge Graphs From Text: A Case Study on Subprime Mortgage Crisis," Special Issue on Knowledge Graph Construction, Semantic Web Journal (by IOS Press), 2024 **(Under Review)**.
 
 ## Contributing to Text2Graph
 
