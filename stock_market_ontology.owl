@@ -1,0 +1,467 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://www.semanticweb.org/ontologies/stock_market_ontology#"
+     xml:base="http://www.semanticweb.org/ontologies/stock_market_ontology"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <owl:Ontology rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Datatypes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.w3.org/2001/XMLSchema#date -->
+
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#date"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasEarningsRelease -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasEarningsRelease">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialEntity"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EarningsRelease"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasEventSpecificDetail -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasEventSpecificDetail">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EventSpecificDetail"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasMarketEvent -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasMarketEvent">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialEntity"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasMarketIndicator -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasMarketIndicator">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialEntity"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketIndicator"/>
+    </owl:ObjectProperty>
+    
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasMarketMovementPattern -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasMarketMovementPattern">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketMovementPattern"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasOwnershipStructure -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasOwnershipStructure">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialEntity"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#OwnershipStructure"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasTransaction -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasTransaction">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialEntity"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketTransaction"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#influencedBy -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#influencedBy">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketIndicator"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketInfluence"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasDate -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasDate">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasDescription -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasDescription">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasImpact -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasImpact">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EventSpecificDetail"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasPercentageChange -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasPercentageChange">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketMovementPattern"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#hasValue -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#hasValue">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketIndicator"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#ConsumerSpending -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#ConsumerSpending">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicActivity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#DevelopedEconomies -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#DevelopedEconomies">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#GeographicRegion"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#EarningsRelease -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#EarningsRelease">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicActivity -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicActivity">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicFactor"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicEntity -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicEntity">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicFactor"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicFactor -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicFactor"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicPolicy -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicPolicy">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicFactor"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicSituation -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicSituation">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicFactor"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#EmergingMarkets -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#EmergingMarkets">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#GeographicRegion"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#EventSpecificDetail -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#EventSpecificDetail">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialActivity -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialActivity"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialEntity -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialEntity">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#StockMarketEntity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialIndicator -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialIndicator"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialInstitution -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialInstitution">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicEntity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#FiscalPolicy -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#FiscalPolicy">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicPolicy"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#GDPGrowth -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#GDPGrowth">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicActivity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#GeographicRegion -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#GeographicRegion">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicFactor"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#Inflation -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#Inflation">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicSituation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#InterestRate -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#InterestRate">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialIndicator"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#Investment -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#Investment">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialActivity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MarketAspect -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketAspect"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#StockMarketEntity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MarketIndex -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketIndex">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialIndicator"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MarketIndicator -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketIndicator">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketAspect"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MarketInfluence -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketInfluence">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketAspect"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MarketMovementPattern -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketMovementPattern">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketEvent"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MarketTransaction -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketTransaction">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketAspect"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MarketVolatility -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketVolatility">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicSituation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MonetaryPolicy -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MonetaryPolicy">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicPolicy"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#MultinationalCorporation -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#MultinationalCorporation">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicEntity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#OwnershipStructure -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#OwnershipStructure">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#MarketAspect"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#PortfolioManagement -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#PortfolioManagement">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialActivity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#Recession -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#Recession">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicSituation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#StockMarketEntity -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#StockMarketEntity"/>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#StockPrice -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#StockPrice">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialIndicator"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#StockTrading -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#StockTrading">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#FinancialActivity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/ontologies/stock_market_ontology#TradeRelations -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/ontologies/stock_market_ontology#TradeRelations">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/ontologies/stock_market_ontology#EconomicActivity"/>
+    </owl:Class>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi -->
+
